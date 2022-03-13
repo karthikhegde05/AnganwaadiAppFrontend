@@ -6,6 +6,8 @@ import { IonContent,
     IonInput,
     IonButton } from '@ionic/react';
 import React, {useState, useEffect} from 'react';
+import LoginClient from '../httpClient/LoginClient';
+
 
 const Login: React.FC = () => {
 
@@ -13,7 +15,7 @@ const Login: React.FC = () => {
     const [password, setPassword] = useState<string>("")
 
     function loginUser(){ // use an effect instead
-        alert(username+ " " + password);
+        LoginClient.login("a", "a");
     }
     
   return (

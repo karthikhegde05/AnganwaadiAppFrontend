@@ -1,0 +1,7 @@
+{
+  "name": "anganwaadiApp",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "react"
+}

@@ -4,23 +4,31 @@ export default class LoginClient{
 
     
 
-    static login(id:String, password:String, fun: Function):void{
+    static login(userID:String, password:String):Promise<String>{
         
         
-        Axios.post("http://localhost:8081/login", {"userID":"hem123"}).then((response) => {this.loginSuccess(response, fun)}).catch(function (error){console.log(error)});
+        return Axios.post("http://localhost:8081/login",
+        {
+            "userID":userID,
+            "password":password
+        }
+        ).then((response) => {return this.loginSuccess(response)}).
+        catch(function (error){console.log(error); return "error"});
         
     }
 
-    private static loginSuccess(response: AxiosResponse, fun: Function){
+    private static loginSuccess(response: AxiosResponse): String{
 
+        console.log(response.data);
         if(response.data=="valid"){
-            fun();
+            return "valid";
         }
         else
-            alert("wrongPassword");
-        console.log(response.data);
+            return "invalid";
 
     }
+
+    
 
 
 

@@ -34,11 +34,22 @@ const Login: React.FC = () => {
     }
 
     function moveToHome(){
-      alert("moved to home");
+      router.push("/register");
     }
 
     async function login(){
-      LoginClient.login(username, password, moveToHome);
+      const result:String = await LoginClient.login(username, password);
+
+      if(result == "valid"){
+        moveToHome();
+      }
+      else if(result == "invalid"){
+        alert("wrong password");
+      }
+      else if(result == "error"){
+        alert("there was a problem connecting to the server");
+      }
+
     }
     
   return (

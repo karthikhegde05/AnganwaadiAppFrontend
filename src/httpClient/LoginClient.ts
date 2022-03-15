@@ -7,11 +7,7 @@ export default class LoginClient{
     static login(id:String, password:String, fun: Function):void{
         
         
-        Axios.post("http://localhost:8081/login", {"userID":"hem123"}, {
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        }).then((response) => {this.loginSuccess(response, fun)}).catch(function (error){console.log(error)});
+        Axios.post("http://localhost:8081/login", {"userID":"hem123"}).then((response) => {this.loginSuccess(response, fun)}).catch(function (error){console.log(error)});
         
     }
 

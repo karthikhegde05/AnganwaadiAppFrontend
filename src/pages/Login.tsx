@@ -9,7 +9,9 @@ import { IonContent,
     useIonRouter, 
     IonGrid,
     IonRow,
-    IonCol} from '@ionic/react';
+    IonCol,
+    IonCard,
+    IonCardContent} from '@ionic/react';
 import React, {useState, useEffect} from 'react';
 import LoginClient from '../httpClient/LoginClient';
 import "./Login.css"
@@ -51,74 +53,38 @@ const Login: React.FC = () => {
       }
 
     }
-    
-  return (
-    <IonPage>
-      <IonHeader>
-        <IonToolbar>
-          <IonTitle>Anganwaadi App-Login page</IonTitle>
-        </IonToolbar>
-      </IonHeader>
-      <IonContent className="ion-padding">
-        
-        <IonGrid>
-          <IonRow class="ion-justify-content-center">
-            <IonCol size='auto'>
-                <IonInput placeholder="Username?" onIonChange={(e: any) => setUsername(e.target.value)} />
-            
-                <IonInput placeholder="Password?" onIonChange={(e: any) => setPassword(e.target.value)} clearInput={true} />
-            </IonCol>
-          </IonRow>
-          
-          <IonRow class="ion-justify-content-center">
-            <IonCol size='auto'>
-            <IonButton disabled={pressed} onClick={login}>Login</IonButton>
-            </IonCol>
-          </IonRow>
-        </IonGrid>
 
-      </IonContent>
-    </IonPage>
-  );
+
+    function redirectToRegistration(){
+      router.push("/register")
+    }
+
+    return (
+      <IonPage>
+        <IonHeader>
+          <IonToolbar>
+            <IonTitle>Login</IonTitle>
+          </IonToolbar>
+        </IonHeader>
+
+        <IonContent>
+          <IonCard color="warning">
+            <IonCardContent className="ion-padding">
+                <IonInput className="credential" placeholder="Username?" onIonChange={(e: any) => setUsername(e.target.value)} />
+                <IonInput className="credential" placeholder="Password?" onIonChange={(e: any) => setPassword(e.target.value)} clearInput={true} />
+                <IonRow className="ion-justify-content-center">
+                  <IonButton disabled={pressed} onClick={login}>Login</IonButton>
+                </IonRow>
+                <IonRow className="ion-padding ion-justify-content-center">
+                    <p onClick={redirectToRegistration}>forget password?</p>
+                </IonRow>
+            </IonCardContent>
+          </IonCard>
+        </IonContent>    
+      </IonPage>
+    );
 };
 
-// class Login extends React.Component {
 
-
-
-//   render(): React.ReactNode {
-//       return (    <IonPage>
-//         <IonHeader>
-//           <IonToolbar>
-//             <IonTitle>Anganwaadi App-Login page</IonTitle>
-//           </IonToolbar>
-//         </IonHeader>
-//         <IonContent className="ion-padding">
-          
-//           <IonGrid>
-//             <IonRow class="ion-justify-content-center">
-//               <IonCol size='auto'>
-//                   <IonInput placeholder="Username?" onIonChange={(e: any) => setUsername(e.target.value)} />
-//               </IonCol>
-//             </IonRow>
-  
-//             <IonRow class="ion-justify-content-center">
-//               <IonCol size='auto'>
-//                   <IonInput placeholder="Password?" onIonChange={(e: any) => setPassword(e.target.value)} />
-//               </IonCol>
-//             </IonRow>
-            
-//             <IonRow class="ion-justify-content-center">
-//               <IonCol size='auto'>
-//               <IonButton disabled={pressed} onClick={loginUser}>Login</IonButton>
-//               </IonCol>
-//             </IonRow>
-//           </IonGrid>
-  
-//         </IonContent>
-//       </IonPage>);
-//   }
-
-// }
 
 export default Login;

@@ -32,7 +32,7 @@ const Login:React.FC<RouteComponentProps> = ({history}: any) => {
     const [password, setPassword] = useState<string>("")
     const authContext = useAuth();
 
-    const router = useIonRouter();
+    // const router = useIonRouter();
     var pressed:boolean = false;
    
 
@@ -43,8 +43,10 @@ const Login:React.FC<RouteComponentProps> = ({history}: any) => {
     const loginSuccess = (response: AxiosResponse) => {
       if(response.data.result=="valid"){
         // successful login
-        if(authContext!=null)
+        console.log(response.data.awwId);
+        if(authContext!=null){
           authContext.setAuth({awwId:response.data.awwId, loggedIn:true});
+        }
         return "valid";
       }
       else

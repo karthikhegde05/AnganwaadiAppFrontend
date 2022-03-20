@@ -2,7 +2,7 @@ import React, {useState, createContext} from "react";
 
 
 export type authenticationObj = {
-    awwId: number,
+    awwId: string,
     loggedIn: boolean
 }
 
@@ -20,7 +20,7 @@ export const AuthContext = createContext<UserContextType | null>(null);
 
 
 export const AuthContextProvider = ({ children }: AuthContextProviderProps) => {
-    const [auth, setAuth] = useState<authenticationObj | null>({awwId:0, loggedIn:false});
+    const [auth, setAuth] = useState<authenticationObj | null>({awwId:"", loggedIn:false});
 
     return (
         <AuthContext.Provider value={{auth, setAuth}} >

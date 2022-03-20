@@ -1,7 +1,6 @@
 import Axios, { AxiosResponse } from 'axios';
 
 export default class LoginClient{
-
     
 
     static login(userID:String, password:String):Promise<String>{
@@ -19,8 +18,9 @@ export default class LoginClient{
 
     private static loginSuccess(response: AxiosResponse): String{
 
-        console.log(response.data);
-        if(response.data=="valid"){
+        // console.log(response.data);
+        if(response.data.result=="valid"){
+            console.log(response.data.awwId);
             return "valid";
         }
         else

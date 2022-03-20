@@ -1,5 +1,5 @@
 import { Redirect, Route } from 'react-router-dom';
-import { IonApp, IonRouterOutlet, setupIonicReact } from '@ionic/react';
+import { IonApp, IonPage, IonRouterOutlet, IonSplitPane, IonTitle, IonToolbar, setupIonicReact } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
 import Home from './pages/Home';
 import Login from './pages/Login';
@@ -23,22 +23,38 @@ import '@ionic/react/css/display.css';
 
 /* Theme variables */
 import './theme/variables.css';
+import TempFile from './pages/TempFile';
+import WorkerProfilePage from './pages/WorkerProfilePage';
+import NotificationsPage from './pages/NotificationsPage';
+import PatientComponent from './components/PatientComponent';
+import PatientProfilePage from './pages/PatientProfilePage';
 
 setupIonicReact();
 
+
+
 const App: React.FC = () => (
+
   <IonApp>
     <IonReactRouter>
       <IonRouterOutlet>
+        <Route exact path="/tempfile">
+          <TempFile />
+        </Route>
+        <Route exact path="/patientProfile">
+          <PatientProfilePage />
+        </Route>
+        <Route exact path="/workerProfile">
+          <WorkerProfilePage />
+        </Route>
+        <Route exact path="/notifications">
+          <NotificationsPage />
+        </Route>
         <Route exact path="/register">
           <Register />
         </Route>
-        <Route exact path="/login">
-          <Login />
-        </Route>
-        <Route exact path="/home">
-          <Home />
-        </Route>
+        <Route exact path="/login" component={Login} />
+        <Route exact path="/home/:awwId" component={Home}/>
         <Route exact path="/">
           <Redirect to="/login" />
         </Route>

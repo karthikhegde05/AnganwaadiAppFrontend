@@ -17,9 +17,11 @@ ion-button{
     --color-hover: red;
 }
 
-ion-toolbar{
+
+/* Todo: Add this in Main.css */
+/* ion-toolbar{
     --background: rgb(255, 94, 0);
-}
+} */
 
 ion-content{
     --padding-bottom: 100px;

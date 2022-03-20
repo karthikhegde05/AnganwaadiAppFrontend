@@ -1,23 +1,47 @@
-import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar } from '@ionic/react';
-import ExploreContainer from '../components/ExploreContainer';
+import { IonCard, IonCardContent, IonCol, IonContent, IonHeader, IonPage, IonRow, IonTitle, IonToolbar } from '@ionic/react';
+import { RouteComponentProps, useLocation, useParams } from 'react-router';
+import HomeSearchBar from '../components/HomeSearchBar';
+import NotificationsComponent from '../components/NotificatonsComponent';
+import PatientComponent from '../components/PatientComponent';
+import WorkerProfileComponent from '../components/WorkerProfileComponent';
+import Login from './Login';
 import './Home.css';
 
-const Home: React.FC = () => {
+const Home: React.FC<RouteComponentProps> = ({location}) => {
+
   return (
     <IonPage>
       <IonHeader>
         <IonToolbar>
-          <IonTitle>Blank</IonTitle>
+          <IonTitle>Home page - {location.state.awwId}</IonTitle>        
         </IonToolbar>
       </IonHeader>
-      <IonContent fullscreen>
-        <IonHeader collapse="condense">
-          <IonToolbar>
-            <IonTitle size="large">Anganwaddi App - Home page</IonTitle>
-          </IonToolbar>
-        </IonHeader>
-        <ExploreContainer />
-      </IonContent>
+      <IonContent>
+        {/* <IonCard> */}
+        <HomeSearchBar />
+        {/* </IonCard> */}
+
+        <IonCard>
+          <IonCardContent>
+            <IonRow className="ion-justify-content-center">
+              <IonCol>
+                <WorkerProfileComponent />
+              </IonCol>
+              <IonCol>
+                <NotificationsComponent />
+              </IonCol>
+            </IonRow>
+          </IonCardContent>
+        </IonCard>
+
+        <IonCard>
+          <IonCardContent>
+            <IonRow className="ion-justify-content-center">
+              <PatientComponent />
+            </IonRow>
+          </IonCardContent>
+        </IonCard>
+        </IonContent>
     </IonPage>
   );
 };

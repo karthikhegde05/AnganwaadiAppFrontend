@@ -28,13 +28,17 @@ import WorkerProfilePage from './pages/WorkerProfilePage';
 import NotificationsPage from './pages/NotificationsPage';
 import PatientComponent from './components/PatientComponent';
 import PatientProfilePage from './pages/PatientProfilePage';
+import useAuth from './hooks/useAuth';
 
 setupIonicReact();
 
 
 
-const App: React.FC = () => (
-
+const App: React.FC = () => {
+  
+  const {auth, setAuth} = useAuth();
+  
+  return (
   <IonApp>
     <IonReactRouter>
       <IonRouterOutlet>
@@ -63,5 +67,6 @@ const App: React.FC = () => (
     </IonReactRouter>
   </IonApp>
 );
+};
 
 export default App;

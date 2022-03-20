@@ -5,12 +5,12 @@ import React from "react";
 
 
 const RequireAuth = () =>{
-    const {auth, setAuth} = useAuth();
+    const authContext = useAuth();
     const location = useLocation();
 
 
     return {
-
+        
     }
 };
 

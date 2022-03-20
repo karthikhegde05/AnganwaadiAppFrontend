@@ -7,7 +7,7 @@ import WorkerProfileComponent from '../components/WorkerProfileComponent';
 import Login from './Login';
 import './Home.css';
 
-const Home: React.FC<RouteComponentProps> = () => {
+const Home: React.FC = () => {
 
   return (
     <IonPage>

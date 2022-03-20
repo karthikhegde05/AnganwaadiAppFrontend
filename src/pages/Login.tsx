@@ -22,15 +22,15 @@ import "./Login.css"
 import { RouteComponentProps } from 'react-router';
 import { BrowserRouter, Link, Switch} from 'react-router-dom';
 import  Axios, {AxiosResponse } from 'axios';
-import { AuthContext } from '../contexts/AuthProvider';
+import { AuthContext } from '../contexts/AuthContextProvider';
 import useAuth from '../hooks/useAuth';
 
 
-const Login = ({history}) => {
+const Login = ({history}: any) => {
 
     const [username, setUsername] = useState<string>("");
     const [password, setPassword] = useState<string>("")
-    const { auth, setAuth } = useAuth();
+    const authContext = useAuth();
 
     const router = useIonRouter();
     var pressed:boolean = false;
@@ -43,7 +43,8 @@ const Login = ({history}) => {
     const loginSuccess = (response: AxiosResponse) => {
       if(response.data.result=="valid"){
         // successful login
-        setAuth({awwId:response.data.awwId, authenticated:true});
+        if(authContext!=null)
+          authContext.setAuth({awwId:response.data.awwId, loggedIn:true});
         return "valid";
       }
       else

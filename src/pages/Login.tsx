@@ -26,7 +26,7 @@ import { AuthContext } from '../contexts/AuthContextProvider';
 import useAuth from '../hooks/useAuth';
 
 
-const Login = ({history}: any) => {
+const Login:React.FC<RouteComponentProps> = ({history}: any) => {
 
     const [username, setUsername] = useState<string>("");
     const [password, setPassword] = useState<string>("")

@@ -36,7 +36,7 @@ setupIonicReact();
 
 const App: React.FC = () => {
   
-  const {auth, setAuth} = useAuth();
+  const authContext = useAuth();
   
   return (
   <IonApp>
@@ -44,7 +44,12 @@ const App: React.FC = () => {
       <IonRouterOutlet>
 
         {/* Require user authentication (logged in criteria)*/}
-        <Route exact path="/home" component={Home}/>
+        {/* <Route exact path="/home" component={Home}/> */}
+        <Route exact path="/home" render={(props)=>(
+          authContext?.auth?.loggedIn
+            ? <Home />
+            : <Redirect to="/login" />
+        )} />
         <Route exact path="/patientProfile">
           <PatientProfilePage />
         </Route>

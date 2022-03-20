@@ -1,17 +1,27 @@
 import { RouteComponentProps, useLocation } from "react-router";
-import { IonRouterOutlet, IonRouterLink} from "@ionic/react";
+import { IonRouterOutlet, IonRouterLink, IonPage, IonContent} from "@ionic/react";
 import useAuth from "../hooks/useAuth";
 import React from "react";
 
 
-const RequireAuth = () =>{
-    const authContext = useAuth();
-    const location = useLocation();
+// const RequireAuth:React.FC<RouteComponentProps> = ({history}:any) =>{
+//     const authContext = useAuth();
+//     const location = useLocation();
 
+//     if (authContext?.auth?.loggedIn){
+//         <IonRouterOutlet>
+//         </IonRouterOutlet>
+//     }
+// };
 
-    return {
-        
-    }
-};
+const RequireAuth:React.FC = () =>{
+    return (
+        <IonPage>
+            <IonContent>
+                <p>Hello</p>
+            </IonContent>
+        </IonPage>
+    );
+}
 
 export default RequireAuth;

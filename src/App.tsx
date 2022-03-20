@@ -44,30 +44,58 @@ const App: React.FC = () => {
       <IonRouterOutlet>
 
         {/* Require user authentication (logged in criteria)*/}
-        {/* <Route exact path="/home" component={Home}/> */}
-        <Route exact path="/home" render={(props)=>(
+        <Route exact path="/home" render={(props)=> {
+          return (
           authContext?.auth?.loggedIn
             ? <Home />
             : <Redirect to="/login" />
-        )} />
-        <Route exact path="/patientProfile">
-          <PatientProfilePage />
-        </Route>
-        <Route exact path="/workerProfile">
-          <WorkerProfilePage />
-        </Route>
-        <Route exact path="/notifications">
-          <NotificationsPage />
-        </Route>
+          );
+        }} />
+        <Route exact path="/patientProfile" render={(props)=>{
+          return (
+            authContext?.auth?.loggedIn
+            ?<PatientProfilePage />
+            : <Redirect to="/login" />
+          );
+        }} />
+        <Route exact path="/workerProfile" render={(props)=>{
+          return (
+            authContext?.auth?.loggedIn
+              ? <WorkerProfilePage />
+              : <Redirect to="/login" />
+          );
+        }} />
+        <Route exact path="/notifications" render = {(props)=>{
+          return (
+            authContext?.auth?.loggedIn
+              ? <NotificationsPage />
+              : <Redirect to="/login" />
+          );
+        }} />
 
         {/* do not require user authentication */}
-        <Route exact path="/login" component={Login} />
-        <Route exact path="/register">
-          <Register />
-        </Route>
-        <Route exact path="/">
-          <Redirect to="/login" />
-        </Route>
+        {/* once logged in the user must not get to these pages*/}
+        <Route exact path="/login" render = {(props) => {
+          return (
+            authContext?.auth?.loggedIn
+              ? <Redirect to="/home" />
+              : <Login {...props} />
+          );
+        }} />
+        <Route exact path="/register" render = {(props)=>{
+          return (
+            authContext?.auth?.loggedIn
+              ? <Redirect to="/home" />
+              : <Register />
+          );
+        }} />
+        <Route exact path="/" render={(props)=> {
+          return (
+            authContext?.auth?.loggedIn
+              ? <Redirect to="/home" />
+              : <Redirect to="/login" />
+          );
+        }} />
       </IonRouterOutlet>
     </IonReactRouter>
   </IonApp>

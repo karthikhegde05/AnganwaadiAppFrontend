@@ -38,9 +38,9 @@ const App: React.FC = () => (
   <IonApp>
     <IonReactRouter>
       <IonRouterOutlet>
-        <Route exact path="/tempfile">
-          <TempFile />
-        </Route>
+
+        {/* Require user authentication (logged in criteria)*/}
+        <Route exact path="/home" component={Home}/>
         <Route exact path="/patientProfile">
           <PatientProfilePage />
         </Route>
@@ -50,11 +50,12 @@ const App: React.FC = () => (
         <Route exact path="/notifications">
           <NotificationsPage />
         </Route>
+
+        {/* do not require user authentication */}
+        <Route exact path="/login" component={Login} />
         <Route exact path="/register">
           <Register />
         </Route>
-        <Route exact path="/login" component={Login} />
-        <Route exact path="/home/:awwId" component={Home}/>
         <Route exact path="/">
           <Redirect to="/login" />
         </Route>

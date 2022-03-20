@@ -1,4 +1,3 @@
-import { toastController } from '@ionic/core';
 import { IonContent, 
     IonHeader, 
     IonPage, 
@@ -15,22 +14,27 @@ import { IonContent,
     IonMenuButton,
     IonButtons,
     IonRouterOutlet} from '@ionic/react';
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useContext} from 'react';
 import { IonReactRouter } from '@ionic/react-router';
 import MenuContainer from '../components/MenuContainer';
 import LoginClient from '../httpClient/LoginClient';
 import "./Login.css"
 import { RouteComponentProps } from 'react-router';
+import { BrowserRouter, Link, Switch} from 'react-router-dom';
 import  Axios, {AxiosResponse } from 'axios';
+import { AuthContext } from '../contexts/AuthProvider';
+import useAuth from '../hooks/useAuth';
 
 
-const Login: React.FC<RouteComponentProps> = ({history}) => {
+const Login = ({history}) => {
 
     const [username, setUsername] = useState<string>("");
     const [password, setPassword] = useState<string>("")
+    const { auth, setAuth } = useAuth();
+
     const router = useIonRouter();
     var pressed:boolean = false;
-    var awwId:any = 0;
+   
 
     const navigateToRegistration = () => {
       history.push("/register")
@@ -38,14 +42,15 @@ const Login: React.FC<RouteComponentProps> = ({history}) => {
 
     const loginSuccess = (response: AxiosResponse) => {
       if(response.data.result=="valid"){
-        awwId = response.data.awwId;
+        // successful login
+        setAuth({awwId:response.data.awwId, authenticated:true});
         return "valid";
       }
       else
           return "invalid";
     };
 
-    async function login(){
+    const login = async() =>{
       const result = await Axios.post("http://localhost:8081/login",
       {
           "userID":username,
@@ -55,10 +60,7 @@ const Login: React.FC<RouteComponentProps> = ({history}) => {
       catch(function (error){console.log(error); return "error"});
 
       if(result == "valid"){
-        history.push({
-          pathname: `/home/${awwId}`,
-          state: {awwId:awwId, authd:true}
-        });
+        history.push("/home");
       }
       else if(result == "invalid"){
         alert("wrong password");
@@ -67,7 +69,7 @@ const Login: React.FC<RouteComponentProps> = ({history}) => {
         alert("there was a problem connecting to the server");
       }
 
-    }
+    };
 
 
     return (

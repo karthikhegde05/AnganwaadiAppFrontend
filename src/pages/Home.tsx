@@ -7,13 +7,13 @@ import WorkerProfileComponent from '../components/WorkerProfileComponent';
 import Login from './Login';
 import './Home.css';
 
-const Home: React.FC<RouteComponentProps> = ({location}) => {
+const Home: React.FC<RouteComponentProps> = () => {
 
   return (
     <IonPage>
       <IonHeader>
         <IonToolbar>
-          <IonTitle>Home page - {location.state.awwId}</IonTitle>        
+          <IonTitle>Home page</IonTitle>        
         </IonToolbar>
       </IonHeader>
       <IonContent>

@@ -29,6 +29,8 @@ import NotificationsPage from './pages/NotificationsPage';
 import PatientComponent from './components/PatientComponent';
 import PatientProfilePage from './pages/PatientProfilePage';
 import useAuth from './hooks/useAuth';
+import FollowupFormComponent from './pages/FollowupForm';
+import FollowupForm from './pages/FollowupForm';
 
 setupIonicReact();
 
@@ -72,6 +74,14 @@ const App: React.FC = () => {
               : <Redirect to="/login" />
           );
         }} />
+      <Route exact path="/followupForm" render = {(props) => {
+        return (
+          authContext?.auth?.loggedIn 
+            ? <FollowupForm />
+            : <Redirect to="/login" />
+        )
+      }} />
+
 
         {/* do not require user authentication */}
         {/* once logged in the user must not get to these pages*/}

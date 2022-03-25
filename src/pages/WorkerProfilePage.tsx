@@ -36,7 +36,7 @@ const WorkerProfilePage: React.FC = () => {
 
     const GetDetails = async() => {
         const result = await Axios.get("http://localhost:8081/workerProfile/" + authContext?.auth?.awwId)
-                    .then((response)=>{console.log("fetched"); return GetDetailsSuccess(response);})
+                    .then((response)=>{return GetDetailsSuccess(response);})
                     .catch((err)=>{console.log(err); return "error";});
     };
 

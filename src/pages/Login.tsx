@@ -43,7 +43,7 @@ const Login:React.FC<RouteComponentProps> = ({history}: any) => {
     const loginSuccess = (response: AxiosResponse) => {
       if(response.data.result=="valid"){
         // successful login
-        console.log(response.data.awwId);
+        // console.log(response.data.awwId); // remove this in production
         if(authContext!=null){
           authContext.setAuth({awwId:response.data.awwId, loggedIn:true});
         }

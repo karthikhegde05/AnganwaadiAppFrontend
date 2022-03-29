@@ -57,15 +57,26 @@ export default class LocalDB{
 
         this.db.executeSql("insert into sync values (?, ?)", ["followUp", "2000-01-01T10:00:00.000"]);
 
+        this.db.executeSql(`CREATE TABLE IF NOT EXISTS health_status (
+            hs_id integer PRIMARY KEY,
+            height real,
+            weight real,
+            muac real,
+            growth_status string,
+            other_symptoms string,
+            date datetime
+        );`);
+
         this.db.executeSql(`CREATE TABLE IF NOT EXISTS followup (
-            followupId integer PRIMARY KEY,
-            samId integer,
-            workerId string,
-            deadline datetime,
-            completedOn datetime,
+            followup_id integer PRIMARY KEY,
+            sam_id integer,
+            worker_id integer,
+            deadline_date datetime,
+            completed_date datetime,
             completed integer,
-            healthStatusId integer
+            hs_id integer
         );`).catch(error => console.log(error));
+
 
         this.db.executeSql(`CREATE TABLE IF NOT EXISTS workerDetails (
             aww_id integer PRIMARY KEY,

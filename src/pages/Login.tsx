@@ -1,4 +1,3 @@
-import { toastController } from '@ionic/core';
 import { IonContent, 
     IonHeader, 
     IonPage, 
@@ -9,39 +8,62 @@ import { IonContent,
     useIonRouter, 
     IonGrid,
     IonRow,
-    IonCol} from '@ionic/react';
-import React, {useState, useEffect} from 'react';
+    IonCol,
+    IonCard,
+    IonCardContent,
+    IonMenuButton,
+    IonButtons,
+    IonRouterOutlet} from '@ionic/react';
+import React, {useState, useEffect, useContext} from 'react';
+import { IonReactRouter } from '@ionic/react-router';
+import MenuContainer from '../components/MenuContainer';
 import LoginClient from '../httpClient/LoginClient';
 import "./Login.css"
+import { RouteComponentProps } from 'react-router';
+import { BrowserRouter, Link, Switch} from 'react-router-dom';
+import  Axios, {AxiosResponse } from 'axios';
+import { AuthContext } from '../contexts/AuthContextProvider';
+import useAuth from '../hooks/useAuth';
 
 
-const Login: React.FC = () => {
+const Login:React.FC<RouteComponentProps> = ({history}: any) => {
 
     const [username, setUsername] = useState<string>("");
     const [password, setPassword] = useState<string>("")
-    const router = useIonRouter();
+    const authContext = useAuth();
+
+    // const router = useIonRouter();
     var pressed:boolean = false;
+   
 
-    function loginUser(){ // use an effect instead
-        // LoginClient.login("a", "a");
-        // router.push("/register");
-        // console.log(pressed);
-        // pressed = true;
-        // console.log(pressed);
+    const navigateToRegistration = () => {
+      history.push("/register")
+    };
 
-       setPassword("a");
-       console.log(password);
-    }
+    const loginSuccess = (response: AxiosResponse) => {
+      if(response.data.result=="valid"){
+        // successful login
+        // console.log(response.data.awwId); // remove this in production
+        if(authContext!=null){
+          authContext.setAuth({awwId:response.data.awwId, loggedIn:true});
+        }
+        return "valid";
+      }
+      else
+          return "invalid";
+    };
 
-    function moveToHome(){
-      router.push("/register");
-    }
-
-    async function login(){
-      const result:String = await LoginClient.login(username, password);
+    const login = async() =>{
+      const result = await Axios.post("http://localhost:8081/login",
+      {
+          "userID":username,
+          "password":password
+      }
+      ).then((response) => {return loginSuccess(response);}).
+      catch(function (error){console.log(error); return "error"});
 
       if(result == "valid"){
-        moveToHome();
+        history.push("/home");
       }
       else if(result == "invalid"){
         alert("wrong password");
@@ -50,75 +72,37 @@ const Login: React.FC = () => {
         alert("there was a problem connecting to the server");
       }
 
-    }
-    
-  return (
-    <IonPage>
-      <IonHeader>
-        <IonToolbar>
-          <IonTitle>Anganwaadi App-Login page</IonTitle>
-        </IonToolbar>
-      </IonHeader>
-      <IonContent className="ion-padding">
-        
-        <IonGrid>
-          <IonRow class="ion-justify-content-center">
-            <IonCol size='auto'>
-                <IonInput placeholder="Username?" onIonChange={(e: any) => setUsername(e.target.value)} />
-            
-                <IonInput placeholder="Password?" onIonChange={(e: any) => setPassword(e.target.value)} clearInput={true} />
-            </IonCol>
-          </IonRow>
-          
-          <IonRow class="ion-justify-content-center">
-            <IonCol size='auto'>
-            <IonButton disabled={pressed} onClick={login}>Login</IonButton>
-            </IonCol>
-          </IonRow>
-        </IonGrid>
+    };
 
-      </IonContent>
-    </IonPage>
-  );
+
+    return (
+      <IonPage>
+        <IonHeader>
+          <IonToolbar>
+            <IonTitle>Login</IonTitle>
+          </IonToolbar>
+        </IonHeader>
+
+        <IonContent>
+          <IonCard color="warning">
+            <IonCardContent className="ion-padding">
+                <IonInput className="credential" placeholder="Username?" onIonChange={(e: any) => setUsername(e.target.value)} />
+                <IonInput className="credential" type="password" placeholder="Password?" onIonChange={(e: any) => setPassword(e.target.value)} clearInput={true} />
+                <IonRow className="ion-justify-content-center">
+                  <IonButton disabled={pressed} onClick={login}>Login</IonButton>
+                </IonRow>
+                <IonRow className="ion-padding ion-justify-content-center">
+                    <p onClick={navigateToRegistration}>forget password?</p>
+                </IonRow>
+            </IonCardContent>
+          </IonCard>
+        </IonContent>    
+      </IonPage>
+    );
 };
 
-// class Login extends React.Component {
 
-
-
-//   render(): React.ReactNode {
-//       return (    <IonPage>
-//         <IonHeader>
-//           <IonToolbar>
-//             <IonTitle>Anganwaadi App-Login page</IonTitle>
-//           </IonToolbar>
-//         </IonHeader>
-//         <IonContent className="ion-padding">
-          
-//           <IonGrid>
-//             <IonRow class="ion-justify-content-center">
-//               <IonCol size='auto'>
-//                   <IonInput placeholder="Username?" onIonChange={(e: any) => setUsername(e.target.value)} />
-//               </IonCol>
-//             </IonRow>
-  
-//             <IonRow class="ion-justify-content-center">
-//               <IonCol size='auto'>
-//                   <IonInput placeholder="Password?" onIonChange={(e: any) => setPassword(e.target.value)} />
-//               </IonCol>
-//             </IonRow>
-            
-//             <IonRow class="ion-justify-content-center">
-//               <IonCol size='auto'>
-//               <IonButton disabled={pressed} onClick={loginUser}>Login</IonButton>
-//               </IonCol>
-//             </IonRow>
-//           </IonGrid>
-  
-//         </IonContent>
-//       </IonPage>);
-//   }
-
-// }
 
 export default Login;
+
+

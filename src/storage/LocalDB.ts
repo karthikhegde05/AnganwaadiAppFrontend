@@ -16,20 +16,22 @@ type Followup = {
 
 type healthStatusDTO = {
 
-    hs_ID:number,
+    hsId:number,
     height:number,
     weight:number,
     muac:number,
-    growth_status: string,
-    symptoms: string,
+    growthStatus: string,
+    otherSymptoms: string,
+    date: string,
+    patient: string
 
 }
 
 type FollowupDTO = {
     followupId: number,
     workerId: number,
-    deadline: string,
-    completedOn: string,
+    deadline_date: string,
+    completed_date: string,
     completed: boolean,
     samId: string,
     healthStatus: healthStatusDTO
@@ -67,6 +69,8 @@ export default class LocalDB{
             date datetime
         );`);
 
+        // this.db.
+
         this.db.executeSql(`CREATE TABLE IF NOT EXISTS followup (
             followup_id integer PRIMARY KEY,
             sam_id integer,
@@ -74,16 +78,16 @@ export default class LocalDB{
             deadline_date datetime,
             completed_date datetime,
             completed integer,
-            hs_id integer
+            hs_id integer,
+            FOREIGN KEY(hs_id) REFERENCES health_status(hs_id)
         );`).catch(error => console.log(error));
 
-
-        this.db.executeSql(`CREATE TABLE IF NOT EXISTS workerDetails (
+        this.db.executeSql(`CREATE TABLE IF NOT EXISTS worker_details (
             aww_id integer PRIMARY KEY,
             name string
         )`);
 
-        this.db.executeSql("insert into workerDetails values (?, ?)", ["99", "dude"]);
+        this.db.executeSql("insert into worker_details values (?, ?)", ["1", "john"]);
 
     }
 
@@ -93,17 +97,44 @@ export default class LocalDB{
         result = await this.db.executeSql('SELECT * FROM sync', []);
         var last_sync:string = result.rows.item(0).last_sync;
 
-        result = await this.db.executeSql('SELECT * FROM workerDetails', []);
+        result = await this.db.executeSql('SELECT * FROM worker_details', []);
         var workerId:string = result.rows.item(0).aww_id.toString();
         var response = await SyncClient.sync(workerId, last_sync);
-        var newLastSync = await this.insertFollowUp(response);
+        var newLastSync = await this.insertFollowUps(response);
         
-        this.db.executeSql(`UPDATE sync SET last_sync = ? WHERE table_name = 'followUp'`, [newLastSync])
+        this.db.executeSql(`UPDATE sync SET last_sync = ? WHERE table_name = 'followup'`, [newLastSync])
         .catch((error) => {console.log(error)});
 
     }
 
-    private static async insertFollowUp(followups: FollowupDTO[]):Promise<string>{
+    public static async getFollowUps():Promise<Followup[]>{
+
+        var result = await this.db.executeSql(`SELECT * FROM followup`, []);
+
+        var followupList:Followup[] = [];
+
+        var size = result.rows.length;
+
+        for(var i = 0; i < size; i++){
+
+            var row = result.rows.item(i);
+            followupList.push({
+                followupId:row.followup_id, 
+                deadlineDate:row.deadline_date,
+                completedDate: row.completed_date,
+                hasCompleted: row.completed,
+                patientId: row.sam_id
+            });
+        }
+
+        return followupList;
+
+
+
+        
+    }
+
+    private static async insertFollowUps(followups: FollowupDTO[]):Promise<string>{
 
         var max:number = 0;
         var latest:string = "";
@@ -111,15 +142,25 @@ export default class LocalDB{
         try{
             await this.db.transaction((t) =>{
                 followups.forEach((followup) =>{
-                    
+           
+                    var healthstatus = followup.healthStatus;
+                    t.executeSql("INSERT INTO health_status values (?,?,?,?,?,?,?)", [
+                        healthstatus.hsId,
+                        healthstatus.height,
+                        healthstatus.weight,
+                        healthstatus.muac,
+                        healthstatus.growthStatus,
+                        healthstatus.otherSymptoms,
+                        healthstatus.date
+                    ]);
                     t.executeSql("INSERT INTO followup values (?,?,?,?,?,?,?)", [
                         followup.followupId,
                         followup.samId,
                         followup.workerId,
-                        followup.deadline,
-                        followup.completedOn,
+                        followup.deadline_date,
+                        followup.completed_date,
                         followup.completed,
-                        Number(followup.healthStatus.hs_ID)
+                        healthstatus.hsId
                     ]);
                     var date = new Date(followup.createdDate);
                     
@@ -147,9 +188,53 @@ export default class LocalDB{
     }
 
     static async test(){
-        var result = await this.db.executeSql(`select * from sync 
-        where table_name = 'followUp'`, []);
-        console.log(result.rows.item(0));
+        // var result = await this.db.executeSql(`select * from sync 
+        // where table_name = 'followUp'`, []);
+        // console.log(result.rows.item(0));
+
+        var result = await this.db.executeSql(`SELECT * FROM followup`, []);
+
+        var followupList:Followup[] = [];
+
+        // followupList.push({})
+
+        var size = result.rows.length;
+
+        for(var i = 0; i < size; i++){
+
+            var row = result.rows.item(i);
+            followupList.push({
+                followupId:row.followup_id, 
+                deadlineDate:row.deadline_date,
+                completedDate: row.completed_date,
+                hasCompleted: row.completed,
+                patientId: row.sam_id
+            });
+        }
+
+        console.log(followupList);
+
+        // er PRIMARY KEY,
+        //     sam_id integer,
+        //     worker_id integer,
+        //     deadline_date datetime,
+        //     completed_date datetime,
+        //     completed integer,
+        //     hs_id integer,
+        //     FOREIGN KEY(hs_id) REFERENCES health_status(hs_id)
+
+        // type Followup = {
+        //     followupId: Number,
+        //     deadlineDate: String,
+        //     completedDate: String,
+        //     hasCompleted: boolean,
+        //     patientId: Number
+        // }
+
+        console.log(result.rows);
+
+
+        
     }
 
     static close(){

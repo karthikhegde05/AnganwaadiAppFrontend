@@ -48,9 +48,11 @@ const App: React.FC = () => {
         {/* Require user authentication (logged in criteria)*/}
         <Route exact path="/home" render={(props)=> {
           return (
-          authContext?.auth?.loggedIn
-            ? <Home />
-            : <Redirect to="/login" />
+          // authContext?.auth?.loggedIn
+          //   ? <Home />
+          //   : <Redirect to="/login" />
+
+          <Home />
           );
         }} />
         <Route exact path="/patientProfile" render={(props)=>{

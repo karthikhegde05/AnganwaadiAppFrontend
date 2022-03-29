@@ -57,7 +57,7 @@ export default class LocalDB{
             last_sync datetime
         );`);
 
-        this.db.executeSql("insert into sync values (?, ?)", ["followUp", "2000-01-01T10:00:00.000"]);
+        this.db.executeSql("insert into sync values (?, ?)", ["followup", "2000-01-01T10:00:00.000"]);
 
         this.db.executeSql(`CREATE TABLE IF NOT EXISTS health_status (
             hs_id integer PRIMARY KEY,
@@ -188,31 +188,30 @@ export default class LocalDB{
     }
 
     static async test(){
-        // var result = await this.db.executeSql(`select * from sync 
-        // where table_name = 'followUp'`, []);
-        // console.log(result.rows.item(0));
+        var result = await this.db.executeSql(`select * from sync`, []);
+        console.log(result.rows.item(0));
 
-        var result = await this.db.executeSql(`SELECT * FROM followup`, []);
+        // var result = await this.db.executeSql(`SELECT * FROM followup`, []);
 
-        var followupList:Followup[] = [];
+        // var followupList:Followup[] = [];
 
-        // followupList.push({})
+        // // followupList.push({})
 
-        var size = result.rows.length;
+        // var size = result.rows.length;
 
-        for(var i = 0; i < size; i++){
+        // for(var i = 0; i < size; i++){
 
-            var row = result.rows.item(i);
-            followupList.push({
-                followupId:row.followup_id, 
-                deadlineDate:row.deadline_date,
-                completedDate: row.completed_date,
-                hasCompleted: row.completed,
-                patientId: row.sam_id
-            });
-        }
+        //     var row = result.rows.item(i);
+        //     followupList.push({
+        //         followupId:row.followup_id, 
+        //         deadlineDate:row.deadline_date,
+        //         completedDate: row.completed_date,
+        //         hasCompleted: row.completed,
+        //         patientId: row.sam_id
+        //     });
+        // }
 
-        console.log(followupList);
+        // console.log(followupList);
 
         // er PRIMARY KEY,
         //     sam_id integer,
@@ -231,7 +230,7 @@ export default class LocalDB{
         //     patientId: Number
         // }
 
-        console.log(result.rows);
+        // console.log(result.rows);
 
 
         

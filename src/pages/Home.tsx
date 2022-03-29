@@ -10,6 +10,15 @@ import useAuth from '../hooks/useAuth';
 import { useEffect, useState } from 'react';
 import Axios, { AxiosResponse } from 'axios';
 import PatientProfilePage from './PatientProfilePage';
+import LocalDB from '../storage/LocalDB';
+
+type Followup = {
+  followupId: Number,
+  deadlineDate: String,
+  completedDate: String,
+  hasCompleted: boolean,
+  patientId: Number
+}
 
 const Home: React.FC = () => {
 
@@ -19,7 +28,7 @@ const Home: React.FC = () => {
   // const [followupId, setFollowupId] = useState<Number>(0);
   // const [deadlineDate, setDeadlineDate] = useState<String>("");
 
-  const [lstFollowups, setLstFollowups] = useState([]);
+  const [lstFollowups, setLstFollowups] = useState<Followup[]>([]);
   
   const GetFollowupDetailsSuccess = (response:AxiosResponse) => {
     if(response.data.nullObj==false){
@@ -28,9 +37,12 @@ const Home: React.FC = () => {
   };
 
   const GetFollowupDetails = async() => {
-      const result = await Axios.get("http://localhost:8081/profileFollowup/" + authContext?.auth?.awwId)
-                  .then((response)=>{console.log("fetched"); return GetFollowupDetailsSuccess(response);})
-                  .catch((err)=>{console.log(err); return "error";});
+      // const result = await Axios.get("http://localhost:8081/profileFollowup/" + authContext?.auth?.awwId)
+      //             .then((response)=>{console.log("fetched"); return GetFollowupDetailsSuccess(response);})
+      //             .catch((err)=>{console.log(err); return "error";});
+      await LocalDB.open();
+      var l = await LocalDB.getFollowUps();
+      setLstFollowups(l);
   };
 
   useEffect(() => {

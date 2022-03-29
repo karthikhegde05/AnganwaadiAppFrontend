@@ -22,8 +22,10 @@ const Register: React.FC = () => {
       LocalDB.reset();
     }
 
-    function test(){
+    async function test(){
       LocalDB.test();
+      // var a = await LocalDB.getFollowUps();
+      // console.log(a);
     }
 
     async function registerUser(){ // use an effect instead

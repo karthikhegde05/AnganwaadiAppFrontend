@@ -38,6 +38,26 @@ type FollowupDTO = {
     createdDate: string,
 }
 
+type patientDTO = {
+    samId: number,
+    uhId: string,
+    rchId: string,
+    name: string,
+    age: number,
+    dob: string,
+    gender: string,
+    address: string,
+    city: string,
+    contactNumber: string,
+    relationshipStatus: string,
+    caste: string,
+    religion: string,
+    bpl: string,
+    referredBy: string,
+    last_updated: string,
+    followups: FollowupDTO[]
+}
+
 export default class LocalDB{
 
     
@@ -69,7 +89,26 @@ export default class LocalDB{
             date datetime
         );`);
 
-        // this.db.
+        this.db.executeSql(`
+            CREATE TABLE IF NOT EXISTS patient (
+                sam_id integer PRIMARY KEY,
+                uh_id string,
+                rch_id string,
+                name string,
+                age integer,
+                dob date,
+                gender string,
+                address string,
+                city string,
+                contact_number string,
+                relationship_status string,
+                caste string,
+                religion string,
+                bpl integer,
+                referred_by string,
+                last_updated datetime
+            );
+        `).catch(error => console.log(error));
 
         this.db.executeSql(`CREATE TABLE IF NOT EXISTS followup (
             followup_id integer PRIMARY KEY,
@@ -134,6 +173,65 @@ export default class LocalDB{
         
     }
 
+    private static async insertPatients(patients: patientDTO[]){
+        try{
+            await this.db.transaction((t) =>{
+                patients.forEach((patient) =>{
+                    
+                    // CREATE TABLE IF NOT EXISTS patient (
+                    //     sam_id integer PRIMARY KEY,
+                    //     uh_id string,
+                    //     rch_id string,
+                    //     name string,
+                    //     age integer,
+                    //     dob date,
+                    //     gender string,
+                    //     address string,
+                    //     city string,
+                    //     contact_number string,
+                    //     relationship_status string,
+                    //     caste string,
+                    //     religion string,
+                    //     bpl integer,
+                    //     referred_by string,
+                    //     last_updated datetime
+                    // );
+
+                    t.executeSql("INSERT INTO patient values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", [
+                        patient.samId,
+                        patient.uhId,
+                        patient.rchId,
+                        patient.name,
+                        patient.age,
+                        patient.dob,
+                        patient.gender,
+                        patient.address,
+                        patient.city,
+                        patient.contactNumber,
+                        patient.relationshipStatus,
+                        patient.caste,
+                        patient.religion,
+                        patient.bpl,
+                        patient.referredBy,
+                        patient.last_updated
+                    ]);
+                    
+                });
+
+                 
+            });
+    
+        }
+        catch(error){
+
+            console.log("insert patient failed");
+            console.log(error);
+
+            return "failed";
+
+        }
+    }
+
     private static async insertFollowUps(followups: FollowupDTO[]):Promise<string>{
 
         var max:number = 0;
@@ -188,8 +286,8 @@ export default class LocalDB{
     }
 
     static async test(){
-        var result = await this.db.executeSql(`select * from sync`, []);
-        console.log(result.rows.item(0));
+        var result = await this.db.executeSql(`select * from patient`, []);
+        console.log(result.rows);
 
         // var result = await this.db.executeSql(`SELECT * FROM followup`, []);
 

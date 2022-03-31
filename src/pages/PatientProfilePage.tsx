@@ -1,8 +1,10 @@
-import {IonButton, IonCard, IonCardContent, IonContent, IonHeader, IonPage, IonRow, IonTitle, IonToolbar} from '@ionic/react';
+import {IonButton, IonCard, IonCardContent, IonCol, IonContent, IonHeader, IonIcon, IonPage, IonRow, IonTitle, IonToolbar} from '@ionic/react';
 import Axios, { AxiosResponse } from 'axios';
+import { arrowBack } from 'ionicons/icons';
 import React, {useEffect, useState} from 'react';
 import { useHistory, useLocation } from 'react-router-dom';
 import TakeFollowupComponent from '../components/TakeFollowupComponent';
+import useAuth from '../hooks/useAuth';
 
 type historyTypeProps = {
     patientId: Number
@@ -28,6 +30,13 @@ const PatientProfilePage: React.FC = () => {
                                                 admissionWt:0, targetWt:0, outcome:"unknown"});
     const [lstFollowups, setLstFollowups] = useState([]);
 
+    const authContext = useAuth();
+    const logout = async() => {
+      if(authContext!=null){
+          authContext.setAuth({awwId:"", loggedIn:false});
+        }
+    }
+
 
     const GetPatientDetailsSuccess = (response:AxiosResponse) => {
         if(response.data.nullObj==false){
@@ -52,7 +61,13 @@ const PatientProfilePage: React.FC = () => {
         <IonPage>
             <IonHeader>
             <IonToolbar>
-                <IonTitle>Patient Profile Page Id: {patientId}</IonTitle>
+                <IonRow>
+                    <IonCol><IonTitle>Patient Profile Page Id: {patientId}</IonTitle></IonCol>
+                    <IonCol /> <IonCol />
+                    <IonCol/><IonButton onClick = {logout}>Logout <IonIcon slot="start" icon={arrowBack} /> </IonButton>
+                    
+                </IonRow>
+                
             </IonToolbar>
             </IonHeader>
 

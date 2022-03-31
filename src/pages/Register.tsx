@@ -8,12 +8,18 @@ import { IonContent,
 import React, {useState, useEffect} from 'react';
 
 const Register: React.FC = () => {
-
     const [username, setUsername] = useState<string>("")
     const [password, setPassword] = useState<string>("")
 
     function registerUser(){ // use an effect instead
-        alert(username+ " " + password);
+      alert(username+ " " + password);
+    }
+
+    function validatePassword(password:string){
+      const hasNumber = /\d/;
+      const hasLetter = /[a-z]/i;
+
+      return hasNumber.test(password) && hasLetter.test(password)
     }
     
   return (

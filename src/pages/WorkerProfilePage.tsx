@@ -1,12 +1,13 @@
-import {IonButton, IonContent, IonHeader, IonPage, IonTitle, IonToolbar} from '@ionic/react';
+import {IonButton, IonCol, IonContent, IonHeader, IonIcon, IonPage, IonRow, IonTitle, IonToolbar} from '@ionic/react';
 import Axios, { AxiosResponse } from 'axios';
+import { arrowBack, star } from 'ionicons/icons';
 import React, {useEffect, useState} from 'react';
 import useAuth from '../hooks/useAuth';
 
 
 const WorkerProfilePage: React.FC = () => {
 
-    const authContext = useAuth();
+    
     const [name, setName] = useState<String>("unknown name");
     const [contactNum, setContactNum] = useState<String>("unknown number");
 
@@ -18,7 +19,12 @@ const WorkerProfilePage: React.FC = () => {
     const [angLoc, setAngLoc] = useState<String>("unknown location");
     
 
-
+    const authContext = useAuth();
+    const logout = async() => {
+        if(authContext!=null){
+            authContext.setAuth({awwId:"", loggedIn:false});
+          }
+    }
 
     const GetDetailsSuccess = (response:AxiosResponse) => {
         if(response.data.nullObj==false){
@@ -48,7 +54,13 @@ const WorkerProfilePage: React.FC = () => {
         <IonPage>
             <IonHeader>
             <IonToolbar>
-                <IonTitle>Worker Profile Page</IonTitle>
+                <IonRow>
+                    <IonCol><IonTitle>Worker Profile Page</IonTitle></IonCol>
+                    <IonCol /> <IonCol /> <IonCol />
+                    <IonCol> <IonButton onClick = {logout}>Logout <IonIcon slot="start" icon={arrowBack} /></IonButton></IonCol>
+                </IonRow>
+                
+                
             </IonToolbar>
             </IonHeader>
 
@@ -65,7 +77,6 @@ const WorkerProfilePage: React.FC = () => {
                     <p>anganwaadi location: {angLoc}</p>
                 </div>
             </IonContent>
-
         </IonPage>
     );
 };

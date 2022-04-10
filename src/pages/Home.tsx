@@ -1,4 +1,4 @@
-import { IonCard, IonCardContent, IonCol, IonContent, IonHeader, IonPage, IonRow, IonTitle, IonToolbar } from '@ionic/react';
+import { IonButton, IonCard, IonCardContent, IonCol, IonContent, IonHeader, IonPage, IonRow, IonTitle, IonToolbar } from '@ionic/react';
 import { RouteComponentProps, useLocation, useParams } from 'react-router';
 import HomeSearchBar from '../components/HomeSearchBar';
 import NotificationsComponent from '../components/NotificatonsComponent';
@@ -49,6 +49,13 @@ const Home: React.FC = () => {
       GetFollowupDetails();
   }, []); 
 
+  async function sync(){
+    LocalDB.open();
+    await LocalDB.sync();
+    await GetFollowupDetails();
+    console.log(lstFollowups);
+  }
+
   return (
     <IonPage>
       <IonHeader>
@@ -88,6 +95,7 @@ const Home: React.FC = () => {
               </ul>
           </IonCardContent>
         </IonCard>
+        <IonButton onClick={sync}>Sync</IonButton>
         </IonContent>
     </IonPage>
   );

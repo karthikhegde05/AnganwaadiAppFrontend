@@ -3,6 +3,7 @@ import Axios, {AxiosResponse}  from 'axios';
 import SyncClient from '../httpClient/SyncClient';
 import {SQLitePorter} from '@awesome-cordova-plugins/sqlite-porter';
 import { findAllInRenderedTree } from 'react-dom/test-utils';
+import WorkerProfileComponent from '../components/WorkerProfileComponent';
 
 type Followup = {
     followupId: Number,
@@ -58,6 +59,16 @@ type patientDTO = {
     followups: FollowupDTO[]
 }
 
+type WorkerProfile = {
+    aww_id:number,
+    name:string,
+    contact_number:string,
+    username:string,
+    email:string,
+    aw_address:string,
+    aw_location:string
+}
+
 export default class LocalDB{
 
     
@@ -86,7 +97,8 @@ export default class LocalDB{
             muac real,
             growth_status string,
             other_symptoms string,
-            date datetime
+            date datetime,
+            followup_id integer,
         );`);
 
         this.db.executeSql(`
@@ -123,10 +135,23 @@ export default class LocalDB{
 
         this.db.executeSql(`CREATE TABLE IF NOT EXISTS worker_details (
             aww_id integer PRIMARY KEY,
-            name string
+            name string,
+            contact_number string,
+            username string,
+            email string,
+            aw_address string,
+            aw_location string
         )`);
 
-        this.db.executeSql("insert into worker_details values (?, ?)", ["1", "john"]);
+        this.db.executeSql("insert into worker_details values (?,?,?,?,?,?,?)", [
+            "3",
+            "john", 
+            "999999999",
+            "john",
+            "john@john.com",
+            "somewhere",
+            "in the middle of nowhere"
+        ]);
 
     }
 
@@ -167,9 +192,6 @@ export default class LocalDB{
         }
 
         return followupList;
-
-
-
         
     }
 
@@ -266,10 +288,7 @@ export default class LocalDB{
                         max = date.getTime();
                         latest = followup.createdDate;
                     }
-                    
                 });
-
-                 
             });
 
             return latest;
@@ -285,6 +304,121 @@ export default class LocalDB{
         }
     }
 
+    public static async fillFollowup(followupId:number, height:number, weight:number, muac:number, growthStatus:string, otherSymptoms:string){
+
+        var result = await this.db.executeSql("SELECT hs_id FROM followup WHERE followup_id = ?", [followupId]);
+        
+        const hsId:number = result.rows.item(0).hs_id;
+        const currentDate:Date = new Date();
+        await this.db.transaction((t) =>{
+
+            t.executeSql("UPDATE followup SET completed_date = ?, completed=true WHERE followup_id = ?", [currentDate.toISOString(), followupId]);
+            t.executeSql(`UPDATE health_status 
+            SET height = ?, 
+                weight = ?,
+                muac = ?, 
+                growth_status = ?, 
+                other_symptoms = ?,
+                date = ?
+            WHERE hs_id = ?`, 
+            [
+                height,
+                weight,
+                muac,
+                growthStatus,
+                otherSymptoms,
+                currentDate.toISOString(),
+                hsId
+            ]);
+
+        });
+
+    }
+
+    public static async getWorkerDetails():Promise<WorkerProfile>{
+
+        var result = await this.db.executeSql("SELECT * FROM worker_details", []);
+
+        result = result.rows.item(0);
+        var details:WorkerProfile = {
+            aww_id:result.aww_id,
+            name:result.name,
+            contact_number:result.contact_number,
+            username:result.username,
+            email:result.address,
+            aw_address:result.aw_address,
+            aw_location:result.aw_location
+        };
+
+        return details;
+    
+
+    }
+
+    public static async updateWorker(details:WorkerProfile){
+
+        await this.db.transaction((t) => {
+            t.executeSql("DELETE FROM worker_details", []);
+            t.executeSql("INSERT INTO worker_details values (?,?,?,?,?,?,?)", [
+                details.aww_id,
+                details.name,
+                details.contact_number,
+                details.username,
+                details.email,
+                details.aw_address,
+                details.aw_location
+            ]);
+        });
+
+    }
+    
+
+    static close(){
+        this.db.close();
+    }
+
+    static reset(){
+        SQLite.deleteDatabase({name: 'anganwaadiLocalDB.db', location: 'default'});
+    }
+
+    public static async getPatient(sam_id:number):Promise<patientDTO>{
+
+        var result = await this.db.executeSql("SELECT * FROM patient WHERE sam_id = ?", [sam_id]);
+        result = result.rows.item(0);
+
+        var patient:patientDTO = {
+            samId:result.sam_id,
+            uhId:result.uh_id,
+            rchId:result.rch_id,
+            name:result.name,
+            age:result.age,
+            dob:result.dob,
+            gender:result.gender,
+            address:result.address,
+            city:result.city,
+            contactNumber:result.contact_number,
+            relationshipStatus:result.relationship_status,
+            caste:result.caste,
+            religion:result.religion,
+            bpl:result.bpl,
+            referredBy:result.referred_by,
+            last_updated:result.last_updated,
+            followups: []
+        };
+
+        result = await this.db.executeSql("SELECT * FROM followup WHERE sam_id = ?", [sam_id]);
+
+        const fCount = result.rows.length;
+
+        for(var i = 0; i < fCount; i++){
+            var followup = result.rows.item(i);
+            patient.followups.push({
+                followupId:result.
+            });
+        }
+
+    }
+    
     static async test(){
         var result = await this.db.executeSql(`select * from patient`, []);
         console.log(result.rows);
@@ -334,50 +468,9 @@ export default class LocalDB{
         
     }
 
-    static close(){
-        this.db.close();
-    }
-
-    static reset(){
-        SQLite.deleteDatabase({name: 'anganwaadiLocalDB.db', location: 'default'});
-    }
-    
-
-    //converts from db date format to rest date format
-    private static dateDBtoRest(dbString:string):string{
-        
-        var date:Date = new Date(dbString);
-
-        return date.toISOString();
-    }
-
-    private static dateResttoDB(restString:string):string{
-
-
-        var date:Date = new Date(restString);
-
-        return date.getFullYear().toString() + "-"
-                + (date.getMonth() + 1).toString() + "-"
-                + date.getDay().toString() + " "
-                + date.getHours().toString() + ":"
-                + date.getMinutes().toString() + ":"
-                + date.getSeconds().toString() + "."
-                + date.getMilliseconds();
-
-        
-
-    }
 
 
 
 
 
 }
-
-// foreign key(hs_id) references healthStatus(hs_id),
-
-// deadline_date datetime,
-//                             completed_date datetime,
-//                             hs_id integer,
-//                             foreign key(hs_id) references healthStatus(hs_id),
-//                             completed integer,

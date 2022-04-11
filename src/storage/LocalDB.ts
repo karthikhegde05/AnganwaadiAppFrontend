@@ -10,7 +10,8 @@ type Followup = {
     deadlineDate: String,
     completedDate: String,
     hasCompleted: boolean,
-    patientId: Number
+    patientId: Number,
+    healthStatus:healthStatusDTO
 }
 
 
@@ -23,8 +24,6 @@ type healthStatusDTO = {
     muac:number,
     growthStatus: string,
     otherSymptoms: string,
-    date: string,
-    patient: string
 
 }
 
@@ -34,7 +33,7 @@ type FollowupDTO = {
     deadline_date: string,
     completed_date: string,
     completed: boolean,
-    samId: string,
+    samId: number,
     healthStatus: healthStatusDTO
     createdDate: string,
 }
@@ -90,17 +89,6 @@ export default class LocalDB{
 
         this.db.executeSql("insert into sync values (?, ?)", ["followup", "2000-01-01T10:00:00.000"]);
 
-        this.db.executeSql(`CREATE TABLE IF NOT EXISTS health_status (
-            hs_id integer PRIMARY KEY,
-            height real,
-            weight real,
-            muac real,
-            growth_status string,
-            other_symptoms string,
-            date datetime,
-            followup_id integer,
-        );`);
-
         this.db.executeSql(`
             CREATE TABLE IF NOT EXISTS patient (
                 sam_id integer PRIMARY KEY,
@@ -125,12 +113,16 @@ export default class LocalDB{
         this.db.executeSql(`CREATE TABLE IF NOT EXISTS followup (
             followup_id integer PRIMARY KEY,
             sam_id integer,
-            worker_id integer,
+            aww_id integer,
             deadline_date datetime,
             completed_date datetime,
             completed integer,
             hs_id integer,
-            FOREIGN KEY(hs_id) REFERENCES health_status(hs_id)
+            height real,
+            weight real,
+            muac real,
+            growth_status string,
+            other_symptoms string
         );`).catch(error => console.log(error));
 
         this.db.executeSql(`CREATE TABLE IF NOT EXISTS worker_details (
@@ -152,6 +144,8 @@ export default class LocalDB{
             "somewhere",
             "in the middle of nowhere"
         ]);
+
+        this.test_populate();
 
     }
 
@@ -187,7 +181,15 @@ export default class LocalDB{
                 deadlineDate:row.deadline_date,
                 completedDate: row.completed_date,
                 hasCompleted: row.completed,
-                patientId: row.sam_id
+                patientId: row.sam_id,
+                healthStatus:{
+                    hsId: row.hs_id,
+                    height: row.height,
+                    weight: row.weight,
+                    muac: row.muac,
+                    otherSymptoms: row.other_symptoms,
+                    growthStatus: row.growth_status,
+                }
             });
         }
 
@@ -199,25 +201,6 @@ export default class LocalDB{
         try{
             await this.db.transaction((t) =>{
                 patients.forEach((patient) =>{
-                    
-                    // CREATE TABLE IF NOT EXISTS patient (
-                    //     sam_id integer PRIMARY KEY,
-                    //     uh_id string,
-                    //     rch_id string,
-                    //     name string,
-                    //     age integer,
-                    //     dob date,
-                    //     gender string,
-                    //     address string,
-                    //     city string,
-                    //     contact_number string,
-                    //     relationship_status string,
-                    //     caste string,
-                    //     religion string,
-                    //     bpl integer,
-                    //     referred_by string,
-                    //     last_updated datetime
-                    // );
 
                     t.executeSql("INSERT INTO patient values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", [
                         patient.samId,
@@ -264,23 +247,28 @@ export default class LocalDB{
                 followups.forEach((followup) =>{
            
                     var healthstatus = followup.healthStatus;
-                    t.executeSql("INSERT INTO health_status values (?,?,?,?,?,?,?)", [
-                        healthstatus.hsId,
-                        healthstatus.height,
-                        healthstatus.weight,
-                        healthstatus.muac,
-                        healthstatus.growthStatus,
-                        healthstatus.otherSymptoms,
-                        healthstatus.date
-                    ]);
-                    t.executeSql("INSERT INTO followup values (?,?,?,?,?,?,?)", [
+                    // t.executeSql("INSERT INTO health_status values (?,?,?,?,?,?,?)", [
+                    //     healthstatus.hsId,
+                    //     healthstatus.height,
+                    //     healthstatus.weight,
+                    //     healthstatus.muac,
+                    //     healthstatus.growthStatus,
+                    //     healthstatus.otherSymptoms,
+                    //     healthstatus.date
+                    // ]);
+                    t.executeSql("INSERT INTO followup values (?,?,?,?,?,?,?,?,?,?,?,?)", [
                         followup.followupId,
                         followup.samId,
                         followup.workerId,
                         followup.deadline_date,
                         followup.completed_date,
-                        followup.completed,
-                        healthstatus.hsId
+                        followup.completed?1:0,
+                        healthstatus.hsId,
+                        healthstatus.height,
+                        healthstatus.weight,
+                        healthstatus.muac,
+                        healthstatus.growthStatus,
+                        healthstatus.otherSymptoms
                     ]);
                     var date = new Date(followup.createdDate);
                     
@@ -306,32 +294,25 @@ export default class LocalDB{
 
     public static async fillFollowup(followupId:number, height:number, weight:number, muac:number, growthStatus:string, otherSymptoms:string){
 
-        var result = await this.db.executeSql("SELECT hs_id FROM followup WHERE followup_id = ?", [followupId]);
-        
-        const hsId:number = result.rows.item(0).hs_id;
-        const currentDate:Date = new Date();
-        await this.db.transaction((t) =>{
 
-            t.executeSql("UPDATE followup SET completed_date = ?, completed=true WHERE followup_id = ?", [currentDate.toISOString(), followupId]);
-            t.executeSql(`UPDATE health_status 
-            SET height = ?, 
-                weight = ?,
-                muac = ?, 
-                growth_status = ?, 
-                other_symptoms = ?,
-                date = ?
-            WHERE hs_id = ?`, 
-            [
-                height,
-                weight,
-                muac,
-                growthStatus,
-                otherSymptoms,
-                currentDate.toISOString(),
-                hsId
-            ]);
-
-        });
+        await this.db.executeSql(`UPDATE followup
+        SET completed_date = ?,
+            completed=true,
+            height = ?, 
+            weight = ?,
+            muac = ?, 
+            growth_status = ?, 
+            other_symptoms = ?
+        WHERE followup_id = ?`,
+        [
+            new Date().toISOString().split("T")[0],
+            height,
+            weight,
+            muac,
+            growthStatus,
+            otherSymptoms,
+            followupId
+        ]);
 
     }
 
@@ -413,15 +394,104 @@ export default class LocalDB{
         for(var i = 0; i < fCount; i++){
             var followup = result.rows.item(i);
             patient.followups.push({
-                followupId:result.
+                followupId:followup.followup_id,
+                workerId:followup.aww_id,
+                deadline_date:followup.deadline_date,
+                completed_date:followup.completed_date,
+                completed:followup.completed,
+                samId:followup.sam_id,
+                createdDate:followup.created_date,
+                healthStatus:{
+                    hsId:followup.hs_id,
+                    height:followup.height,
+                    weight:followup.weight,
+                    muac:followup.muac,
+                    growthStatus:followup.growth_status,
+                    otherSymptoms:followup.other_symptoms
+                }
             });
         }
+
+        return patient;
+
+    }
+
+    static async test_populate(){
+
+        var patient1:patientDTO = {
+            samId: 1,
+            uhId: "1",
+            rchId: "1",
+            name: "patient1_name",
+            age: 6,
+            dob: '2000-01-01',
+            gender: 'male',
+            address: 'somewhere',
+            city: 'blore',
+            contactNumber: '8888888888',
+            relationshipStatus: 'single',
+            caste: 'idk',
+            religion: 'idk',
+            bpl: 'true',
+            referredBy: 'me',
+            last_updated: '2022-01-01T10:20:20.000',
+            followups: []
+        };
+        this.insertPatients([patient1]);
+
+        var followup1:FollowupDTO = {
+            followupId: 1,
+            workerId: 3,
+            deadline_date: '2022-01-02',
+            completed_date: '',
+            completed: false,
+            samId: 1,
+            healthStatus: {
+                hsId: 1,
+                height: 0,
+                weight: 0,
+                muac: 0,
+                growthStatus: '',
+                otherSymptoms: ''
+            },
+            createdDate: '2022-01-01'
+        }
+
+        var followup2:FollowupDTO = {
+            followupId: 2,
+            workerId: 3,
+            deadline_date: '2022-01-05',
+            completed_date: '',
+            completed: false,
+            samId: 1,
+            healthStatus: {
+                hsId: 2,
+                height: 0,
+                weight: 0,
+                muac: 0,
+                growthStatus: '',
+                otherSymptoms: ''
+            },
+            createdDate: '2022-01-01'
+        }
+
+        this.insertFollowUps([followup1, followup2]);
 
     }
     
     static async test(){
-        var result = await this.db.executeSql(`select * from patient`, []);
-        console.log(result.rows);
+
+        await this.fillFollowup(1,60,35,80,"good","fever");
+
+        console.log(this.getPatient(1));
+
+        // var result = await this.db.executeSql("select * from followup", []);
+        // console.log(result.rows.item(0));
+        // console.log(result.rows.item(1));
+
+        
+        // var result = await this.db.executeSql(`select * from patient`, []);
+        // console.log(result.rows);
 
         // var result = await this.db.executeSql(`SELECT * FROM followup`, []);
 

@@ -10,7 +10,6 @@ import LocalDB from '../storage/LocalDB';
 import SyncClient from '../httpClient/SyncClient';
 
 const Register: React.FC = () => {
-
     const [username, setUsername] = useState<string>("")
     const [password, setPassword] = useState<string>("")
 

@@ -28,8 +28,13 @@ const PatientComponent: React.FC<FollowupProps> = (props: FollowupProps) =>{
         })
     };
 
+    //let today = new Date(new Date().getFullYear(),new Date().getMonth() , new Date().getDate());
+    //const today = new Date().toISOString();
+    const today = new Date('2022-05-25').toISOString();
+    const color = (props.deadlineDate.localeCompare(today) <= 0)? "danger": "primary";
+
     return (
-        <IonButton disabled={pressed} onClick={redirectToPatientProfile}>Id:{props.followupId}, Date:{props.deadlineDate}</IonButton>
+        <IonButton disabled={pressed} onClick={redirectToPatientProfile} color = {color}>Id:{props.followupId}, Date:{props.deadlineDate}, Patient:{props.patientId}</IonButton>
     );
 };
 

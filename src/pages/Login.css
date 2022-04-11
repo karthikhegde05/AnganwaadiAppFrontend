@@ -17,6 +17,10 @@ ion-button{
     --color-hover: red;
 }
 
+/*ion-cardsubtitle{
+    --color: red;
+}*/
+
 
 /* Todo: Add this in Main.css */
 /* ion-toolbar{

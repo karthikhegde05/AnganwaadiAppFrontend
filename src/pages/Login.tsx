@@ -13,7 +13,8 @@ import { IonContent,
     IonCardContent,
     IonMenuButton,
     IonButtons,
-    IonRouterOutlet} from '@ionic/react';
+    IonRouterOutlet,
+    IonCardSubtitle} from '@ionic/react';
 import React, {useState, useEffect, useContext} from 'react';
 import { IonReactRouter } from '@ionic/react-router';
 import MenuContainer from '../components/MenuContainer';
@@ -22,7 +23,7 @@ import "./Login.css"
 import { RouteComponentProps } from 'react-router';
 import { BrowserRouter, Link, Switch} from 'react-router-dom';
 import  Axios, {AxiosResponse } from 'axios';
-import { AuthContext } from '../contexts/AuthContextProvider';
+import {AuthContext } from '../contexts/AuthContextProvider';
 import useAuth from '../hooks/useAuth';
 
 
@@ -30,12 +31,13 @@ const Login:React.FC<RouteComponentProps> = ({history}: any) => {
 
     const [username, setUsername] = useState<string>("");
     const [password, setPassword] = useState<string>("")
+    const [errorMsg, setErrorMsg] = useState<string>("");
     const authContext = useAuth();
+    
 
     // const router = useIonRouter();
     var pressed:boolean = false;
-   
-
+    
     const navigateToRegistration = () => {
       history.push("/register")
     };
@@ -54,6 +56,7 @@ const Login:React.FC<RouteComponentProps> = ({history}: any) => {
     };
 
     const login = async() =>{
+      history.push("/home");
       const result = await Axios.post("http://localhost:8081/login",
       {
           "userID":username,
@@ -61,15 +64,14 @@ const Login:React.FC<RouteComponentProps> = ({history}: any) => {
       }
       ).then((response) => {return loginSuccess(response);}).
       catch(function (error){console.log(error); return "error"});
-
-      if(result == "valid"){
-        history.push("/home");
-      }
-      else if(result == "invalid"){
-        alert("wrong password");
+      //if(result == "valid"){
+      //  history.push("/home");
+      //}
+      if(result == "invalid"){
+        setErrorMsg("Credentials are incorrect, enter again");
       }
       else if(result == "error"){
-        alert("there was a problem connecting to the server");
+        setErrorMsg("There was a problem connecting to server.");
       }
 
     };
@@ -88,6 +90,7 @@ const Login:React.FC<RouteComponentProps> = ({history}: any) => {
             <IonCardContent className="ion-padding">
                 <IonInput className="credential" placeholder="Username?" onIonChange={(e: any) => setUsername(e.target.value)} />
                 <IonInput className="credential" type="password" placeholder="Password?" onIonChange={(e: any) => setPassword(e.target.value)} clearInput={true} />
+                <IonCardSubtitle>{errorMsg}</IonCardSubtitle>
                 <IonRow className="ion-justify-content-center">
                   <IonButton disabled={pressed} onClick={login}>Login</IonButton>
                 </IonRow>

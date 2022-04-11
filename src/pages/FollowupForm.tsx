@@ -1,14 +1,18 @@
-import { IonButton, IonCard, IonCardContent, IonContent, IonHeader, IonInput, IonPage, IonRow, IonTitle, IonToolbar, useIonRouter } from "@ionic/react";
+import { IonButton, IonCard, IonCardContent, IonCol, IonContent, IonHeader, IonIcon, IonInput, IonPage, IonRow, IonTitle, IonToolbar, useIonRouter } from "@ionic/react";
 import React, {useState} from "react";
 import { useHistory, useLocation } from "react-router";
+import { boysGrowthMap , girlsGrowthMap} from "../components/GrowthMap";
 import Axios, {AxiosResponse} from 'axios';
+import { arrowBack } from "ionicons/icons";
+import useAuth from "../hooks/useAuth";
 
 type FollowupProps = {
     followupId: Number,
     deadlineDate: String,
     completedDate: String,
     hasCompleted: boolean,
-    patientId: Number
+    patientId: Number,
+    gender: String
 }
 
 type patientProfileProps = {
@@ -21,11 +25,21 @@ const FollowupFormComponent: React.FC = () =>{
 
     const history = useHistory<patientProfileProps>();
 
-    const [height, setHeight] = useState();
-    const [weight, setWeight] = useState();
+    const [height, setHeight] = useState(1);
+    const [weight, setWeight] = useState(0);
     const [muac, setMuac] = useState();
     const [growthStatus, setGrowthStatus] = useState();
     const [otherSymptoms, setOthSymptoms] = useState();
+
+    const gender:String = hist.state.gender;
+
+    
+    const authContext = useAuth();
+    const logout = async() => {
+      if(authContext!=null){
+          authContext.setAuth({awwId:"", loggedIn:false});
+        }
+    }
 
     const formSubmissionSuccess = (response:AxiosResponse) => {
 
@@ -42,7 +56,37 @@ const FollowupFormComponent: React.FC = () =>{
     };
 
     const formSubmission = async() => {
-        const submitResult = await Axios.post("http://localhost:8081/followupFormSubmission/" + hist.state.followupId.toString() ,{
+        var destUrl = "";
+        let ratio = weight;//height;
+
+        console.log(weight);
+        if(gender == "M"){
+          if(ratio < boysGrowthMap[height]){
+            alert("SAM child");
+            destUrl = "http://localhost:8081/followupFormSubmission/" + hist.state.followupId.toString();
+          }
+          else{
+            alert("Healthy");
+            destUrl = "http://localhost:8081/followupFormSubmission/" + hist.state.followupId.toString();
+          }
+        }
+
+        if(gender == "F"){
+          if(ratio < girlsGrowthMap[height]){
+            alert("SAM child");
+            destUrl = "http://localhost:8081/followupFormSubmission/" + hist.state.followupId.toString();
+          }
+          else{
+            alert("Healthy");
+            destUrl = "http://localhost:8081/followupFormSubmission/" + hist.state.followupId.toString();
+          }
+        }
+
+        console.log(gender);
+        console.log(destUrl);
+        
+
+        const submitResult = await Axios.post(destUrl,{
             "height": height,
             "weight": weight,
             "muac": muac,
@@ -56,7 +100,11 @@ const FollowupFormComponent: React.FC = () =>{
         <IonPage>
           <IonHeader>
             <IonToolbar>
-              <IonTitle>Follow up form for patientId: {hist.state.patientId}</IonTitle>
+              <IonRow>           
+              <IonCol> <IonTitle>Follow up form for patientId: {hist.state.patientId}</IonTitle> </IonCol>
+              <IonCol /><IonCol />
+              <IonCol /><IonButton onClick = {logout}>Logout <IonIcon slot="start" icon={arrowBack} /> </IonButton>             
+              </IonRow>          
             </IonToolbar>
           </IonHeader>
   

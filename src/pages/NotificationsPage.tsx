@@ -1,12 +1,27 @@
-import { IonButton, IonContent, IonHeader, IonPage, IonTitle, IonToolbar } from "@ionic/react";
+import { IonButton, IonCol, IonContent, IonHeader, IonIcon, IonPage, IonRow, IonTitle, IonToolbar } from "@ionic/react";
+import { arrowBack } from "ionicons/icons";
 import React, {useState} from "react";
+import useAuth from "../hooks/useAuth";
 
 const NotificationsPage: React.FC = () =>{
+
+    const authContext = useAuth();
+    const logout = async() => {
+      if(authContext!=null){
+          authContext.setAuth({awwId:"", loggedIn:false});
+        }
+    }
+
     return (
     <IonPage>
         <IonHeader>
         <IonToolbar>
-            <IonTitle>Notifications Page</IonTitle>
+            <IonRow>
+                <IonCol><IonTitle>Notifications Page</IonTitle> </IonCol>
+                <IonCol/> <IonCol/>
+                <IonCol/><IonButton onClick = {logout}>Logout <IonIcon slot="start" icon={arrowBack} /> </IonButton>
+
+            </IonRow>
         </IonToolbar>
         </IonHeader>
 

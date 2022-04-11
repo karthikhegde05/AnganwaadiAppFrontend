@@ -7,7 +7,8 @@ type FollowupProps = {
     deadlineDate: String,
     completedDate: String,
     hasCompleted: boolean,
-    patientId: Number
+    patientId: Number,
+    gender: String
 }
 
 

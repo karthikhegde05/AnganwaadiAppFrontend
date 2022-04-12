@@ -5,6 +5,7 @@ import React, {useEffect, useState} from 'react';
 import { useHistory, useLocation } from 'react-router-dom';
 import TakeFollowupComponent from '../components/TakeFollowupComponent';
 import useAuth from '../hooks/useAuth';
+import LocalDB from '../storage/LocalDB';
 
 type historyTypeProps = {
     patientId: Number

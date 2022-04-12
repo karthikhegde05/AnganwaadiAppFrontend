@@ -2,10 +2,10 @@ import {IonButton, IonCol, IonContent, IonGrid, IonHeader, IonIcon, IonPage, Ion
 import Axios, { AxiosResponse } from 'axios';
 import { arrowBack, callOutline, homeOutline, locationOutline, mailOutline, peopleCircleOutline, peopleOutline, personOutline, star } from 'ionicons/icons';
 import React, {useEffect, useState} from 'react';
-import { useTable } from 'react-table';
+//import { useTable } from 'react-table';
 import useAuth from '../hooks/useAuth';
 import styled from 'styled-components';
-import DataTable from 'react-data-table-component';
+//import DataTable from 'react-data-table-component';
 import { moon } from "ionicons/icons";
 import styles from "./WorkerProfilePage.module.scss";
 
@@ -71,7 +71,6 @@ const WorkerProfilePage:React.FC = () => {
                     <IonCol><Title>Worker Profile Page</Title></IonCol>
 
 					{/*<IonButtons slot="end">
-
 						<IonButton color="light">
 							<IonIcon icon={ ellipsisHorizontal } />
 						</IonButton>
@@ -115,7 +114,6 @@ const WorkerProfilePage:React.FC = () => {
 												Message
 											</IonButton>
 										</IonCol>
-
 										<IonCol size="6">
 											<IonButton color="primary" expand="block">
 												<IonIcon icon={ personAddOutline } size="small" />&nbsp;

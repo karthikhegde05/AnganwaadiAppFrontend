@@ -10,8 +10,18 @@ import useAuth from '../hooks/useAuth';
 import { useEffect, useState } from 'react';
 import Axios, { AxiosResponse } from 'axios';
 import PatientProfilePage from './PatientProfilePage';
+import LocalDB from '../storage/LocalDB';
 import { arrowBack } from 'ionicons/icons';
 import { ListenOptions } from 'net';
+
+type Followup = {
+  followupId: Number,
+  deadlineDate: String,
+  completedDate: String,
+  hasCompleted: boolean,
+  patientId: Number
+}
+
 //import {giveSearchText} from '../components/HomeSearchBar';
 
 const Home: React.FC = () => {
@@ -22,7 +32,7 @@ const Home: React.FC = () => {
   // const [followupId, setFollowupId] = useState<Number>(0);
   // const [deadlineDate, setDeadlineDate] = useState<String>("");
 
-  const [lstFollowups, setLstFollowups] = useState([]);
+  const [lstFollowups, setLstFollowups] = useState<Followup[]>([]);
   
   const [searchFollowupText, setSearchFollowupText] = useState("");
   const [interFollowupText, setInterFollowupText] = useState("");
@@ -64,14 +74,24 @@ const Home: React.FC = () => {
   };
 
   const GetFollowupDetails = async() => {
-      const result = await Axios.get("http://localhost:8081/profileFollowup/" + authContext?.auth?.awwId)
-                  .then((response)=>{console.log("fetched"); return GetFollowupDetailsSuccess(response);})
-                  .catch((err)=>{console.log(err); return "error";});
+       const result = await Axios.get("http://localhost:8081/profileFollowup/" + authContext?.auth?.awwId)
+                   .then((response)=>{console.log("fetched"); return GetFollowupDetailsSuccess(response);})
+                   .catch((err)=>{console.log(err); return "error";});
+      //await LocalDB.open();
+      //var l = await LocalDB.getFollowUps();
+      //setLstFollowups(l);
   };
 
   useEffect(() => {
       GetFollowupDetails();
   }, []); 
+
+  async function sync(){
+    LocalDB.open();
+    await LocalDB.sync();
+    await GetFollowupDetails();
+    console.log(lstFollowups);
+  }
 
   return (
     <IonPage>
@@ -148,11 +168,10 @@ const Home: React.FC = () => {
               </ul>
           </IonCardContent>
         </IonCard>
+        <IonButton onClick={sync}>Sync</IonButton>
         </IonContent>
     </IonPage>
   );
 };
 
 export default Home;
-
-

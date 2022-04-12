@@ -28,8 +28,10 @@ const FollowupFormComponent: React.FC = () =>{
     const [height, setHeight] = useState(1);
     const [weight, setWeight] = useState(0);
     const [muac, setMuac] = useState();
-    const [growthStatus, setGrowthStatus] = useState();
+    const [growthStatus, setGrowthStatus] = useState("");
     const [otherSymptoms, setOthSymptoms] = useState();
+
+    const [buttonCheck, setButtonCheck] = useState(false);
 
     const gender:String = hist.state.gender;
 
@@ -39,6 +41,16 @@ const FollowupFormComponent: React.FC = () =>{
       if(authContext!=null){
           authContext.setAuth({awwId:"", loggedIn:false});
         }
+    }
+
+    const changeButtonText = () => {
+      console.log("Hello");
+      if(buttonCheck){
+        return "Submit";
+      }
+      else{
+        return "Confirm";
+      }
     }
 
     const formSubmissionSuccess = (response:AxiosResponse) => {
@@ -56,45 +68,74 @@ const FollowupFormComponent: React.FC = () =>{
     };
 
     const formSubmission = async() => {
-        var destUrl = "";
+        var destUrl = "http://localhost:8081/followupFormSubmission/" + hist.state.followupId.toString();
         let ratio = weight;//height;
 
         console.log(weight);
-        if(gender == "M"){
-          if(ratio < boysGrowthMap[height]){
-            alert("SAM child");
-            destUrl = "http://localhost:8081/followupFormSubmission/" + hist.state.followupId.toString();
-          }
-          else{
-            alert("Healthy");
-            destUrl = "http://localhost:8081/followupFormSubmission/" + hist.state.followupId.toString();
-          }
+        //if(gender == "M"){
+        if(ratio < boysGrowthMap[height]){
+          setGrowthStatus("SAM child");
+          //alert("SAM child");
+            //destUrl = "http://localhost:8081/followupFormSubmission/" + hist.state.followupId.toString();
+        }
+        else{
+          setGrowthStatus("Healthy");
+          //alert("Healthy");
+            //destUrl = "http://localhost:8081/followupFormSubmission/" + hist.state.followupId.toString();
         }
 
-        if(gender == "F"){
+        setButtonCheck(true);
+        changeButtonText();
+
+        //setButtonText("Confirm");
+        //}
+
+        /*if(gender == "F"){
           if(ratio < girlsGrowthMap[height]){
             alert("SAM child");
-            destUrl = "http://localhost:8081/followupFormSubmission/" + hist.state.followupId.toString();
+            //destUrl = "http://localhost:8081/followupFormSubmission/" + hist.state.followupId.toString();
           }
           else{
             alert("Healthy");
-            destUrl = "http://localhost:8081/followupFormSubmission/" + hist.state.followupId.toString();
+            //destUrl = "http://localhost:8081/followupFormSubmission/" + hist.state.followupId.toString();
           }
-        }
+        }*/
 
         console.log(gender);
-        console.log(destUrl);
+        console.log(destUrl);        
         
-
-        const submitResult = await Axios.post(destUrl,{
-            "height": height,
-            "weight": weight,
-            "muac": muac,
-            "growthStatus": growthStatus,
-            "otherSymptoms": otherSymptoms
-        }).then((response)=>{console.log("posted"); return formSubmissionSuccess(response);})
-        .catch((err)=>{console.log(err);})
+        if(buttonCheck){
+            const submitResult = await Axios.post(destUrl,{
+              "height": height,
+              "weight": weight,
+              "muac": muac,
+              "growthStatus": growthStatus,
+              "otherSymptoms": otherSymptoms
+            }).then((response)=>{console.log("posted"); return formSubmissionSuccess(response);})
+              .catch((err)=>{console.log(err);})
+        }
     };
+
+    const changeHeight = (e:any) =>{
+      setHeight(e.target.value);
+      setButtonCheck(false);
+    }
+
+    const changeWeight = (e:any) =>{
+      setWeight(e.target.value);
+      setButtonCheck(false);
+    }
+
+    const changeMuac = (e:any) =>{
+      setMuac(e.target.value);
+      setButtonCheck(false);
+    }
+
+    const changeSymptoms = (e:any) => {
+      setOthSymptoms(e.target.value);
+      setButtonCheck(false);
+    }
+
 
     return (
         <IonPage>
@@ -111,13 +152,14 @@ const FollowupFormComponent: React.FC = () =>{
           <IonContent>
             <IonCard color="warning">
               <IonCardContent className="ion-padding">
-                  <IonInput className="credential" placeholder="Height?" onIonChange={(e: any) => setHeight(e.target.value)} clearInput={true} />
-                  <IonInput className="credential" placeholder="Weight?" onIonChange={(e: any) => setWeight(e.target.value)} clearInput={true} />
-                  <IonInput className="credential" placeholder="MUAC?" onIonChange={(e: any) => setMuac(e.target.value)} clearInput={true} />
-                  <IonInput className="credential" placeholder="Growth Status?" onIonChange={(e: any) => setGrowthStatus(e.target.value)} clearInput={true} /> {/* make it radio buttons */}
-                  <IonInput className="credential" placeholder="Any Other Symptoms?" onIonChange={(e: any) => setOthSymptoms(e.target.value)} clearInput={true} />
+                  <IonInput className="credential" placeholder="Height?" onIonChange={changeHeight} clearInput={true}/>
+                  <IonInput className="credential" placeholder="Weight?" onIonChange={changeWeight} clearInput={true} />
+                  <IonInput className="credential" placeholder="MUAC?" onIonChange={changeMuac} clearInput={true} />
+                  {/*<IonInput className="credential" placeholder="Growth Status?" disabled= {true} clearInput={true} /> {/* make it radio buttons */}
+                  <IonRow className = "credential"> {growthStatus}</IonRow>
+                  <IonInput className="credential" placeholder="Any Other Symptoms?" onIonChange={changeSymptoms} clearInput={true} />
                   <IonRow className="ion-justify-content-center">
-                    <IonButton onClick={formSubmission}>Submit</IonButton>
+                    <IonButton onClick={formSubmission}> {changeButtonText()}</IonButton>
                   </IonRow>
               </IonCardContent>
             </IonCard>

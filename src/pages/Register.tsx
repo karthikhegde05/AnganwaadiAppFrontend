@@ -6,20 +6,48 @@ import { IonContent,
     IonInput,
     IonButton } from '@ionic/react';
 import React, {useState, useEffect} from 'react';
+import LocalDB from '../storage/LocalDB';
+import SyncClient from '../httpClient/SyncClient';
 
 const Register: React.FC = () => {
     const [username, setUsername] = useState<string>("")
     const [password, setPassword] = useState<string>("")
 
-    function registerUser(){ // use an effect instead
-      alert(username+ " " + password);
+    function open(){
+      LocalDB.open();
     }
 
-    function validatePassword(password:string){
-      const hasNumber = /\d/;
-      const hasLetter = /[a-z]/i;
+    function reset(){
+      LocalDB.reset();
+    }
 
-      return hasNumber.test(password) && hasLetter.test(password)
+    async function test(){
+      LocalDB.test();
+      // var a = await LocalDB.getFollowUps();
+      // console.log(a);
+    }
+
+    async function registerUser(){ // use an effect instead
+        // LocalDB.reset();
+        // await LocalDB.open();
+        // await LocalDB.init();
+        // LocalDB.close();
+
+        
+        // await LocalDB.open();
+        // console.log("wowow");
+        await LocalDB.sync();
+        // console.log("asasa");
+        // LocalDB.close();
+
+    }
+
+    function sync(){
+      LocalDB.sync();
+    }
+
+    function init(){
+      LocalDB.init();
     }
     
   return (
@@ -32,7 +60,11 @@ const Register: React.FC = () => {
       <IonContent className="ion-padding">
         <IonInput placeholder="Username?" onIonChange={(e: any) => setUsername(e.target.value)} />
         <IonInput placeholder="Password?" onIonChange={(e: any) => setPassword(e.target.value)} />
-        <IonButton onClick={registerUser}>Register</IonButton>
+        <IonButton onClick={sync}>sync</IonButton>
+        <IonButton onClick={open}>Open</IonButton>
+        <IonButton onClick={reset}>Reset</IonButton>
+        <IonButton onClick={test}>Test</IonButton>
+        <IonButton onClick={init}>Init</IonButton>
       </IonContent>
     </IonPage>
   );

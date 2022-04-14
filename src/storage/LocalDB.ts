@@ -68,6 +68,18 @@ type WorkerProfile = {
     aw_location:string
 }
 
+type Discharge = {
+    dischargeId:number,
+    admissionDate:string,
+    admissionWeight:number,
+    targetWeight:number,
+    dischargeDate:string,
+    dischargeWeight:number,
+    outcome:string,
+    treatmentProtocol:string
+    samId:number
+}
+
 export default class LocalDB{
 
     
@@ -144,6 +156,18 @@ export default class LocalDB{
             "somewhere",
             "in the middle of nowhere"
         ]);
+
+        this.db.executeSql(`CREATE TABLE IF NOT EXISTS discharge_summary (
+            discharge_id integer PRIMARY KEY,
+            admission_date datetime,
+            admission_weight real,
+            target_weight real,
+            discharge_date datetime,
+            discharge_weight real,
+            outcome string,
+            treatment_protocol string,
+            sam_id integer
+        )`);
 
         this.test_populate();
 
@@ -237,6 +261,61 @@ export default class LocalDB{
         }
     }
 
+    private static async insertDischarge(discharges: Discharge[]){
+
+        try{
+            await this.db.transaction((t) =>{
+
+                discharges.forEach((discharge) => {
+                    console.log("inserting");
+                    t.executeSql("INSERT INTO discharge_summary values (?,?,?,?,?,?,?,?,?)", [
+                        discharge.dischargeId,
+                        discharge.admissionDate,
+                        discharge.admissionWeight,
+                        discharge.targetWeight,
+                        discharge.dischargeDate,
+                        discharge.dischargeWeight,
+                        discharge.outcome,
+                        discharge.treatmentProtocol,
+                        discharge.samId
+                    ]);
+    
+                });
+            });
+        }
+        catch(e){
+            console.log("insert failed");
+            console.log(e);
+        }
+        
+    }
+
+    private static async getLatestDischarge(samId:number):Promise<Discharge>{
+
+        var result = await this.db.executeSql(`
+            SELECT * FROM discharge_summary
+            WHERE sam_id = ?
+            ORDER BY discharge_date desc
+            LIMIT 1
+        `, [samId]);
+
+        result = result.rows.item(0);
+
+        const discharge: Discharge = {
+            dischargeId: result.discharge_id,
+            admissionDate: result.admission_date,
+            admissionWeight: result.admission_weight,
+            targetWeight: result.target_weight,
+            dischargeDate: result.discharge_date,
+            dischargeWeight: result.discharge_weight,
+            outcome: result.outcome,
+            treatmentProtocol: result.treatment_protocol,
+            samId: result.sam_id
+        };
+
+        return discharge;
+    }
+
     private static async insertFollowUps(followups: FollowupDTO[]):Promise<string>{
 
         var max:number = 0;
@@ -247,15 +326,6 @@ export default class LocalDB{
                 followups.forEach((followup) =>{
            
                     var healthstatus = followup.healthStatus;
-                    // t.executeSql("INSERT INTO health_status values (?,?,?,?,?,?,?)", [
-                    //     healthstatus.hsId,
-                    //     healthstatus.height,
-                    //     healthstatus.weight,
-                    //     healthstatus.muac,
-                    //     healthstatus.growthStatus,
-                    //     healthstatus.otherSymptoms,
-                    //     healthstatus.date
-                    // ]);
                     t.executeSql("INSERT INTO followup values (?,?,?,?,?,?,?,?,?,?,?,?)", [
                         followup.followupId,
                         followup.samId,
@@ -477,13 +547,44 @@ export default class LocalDB{
 
         this.insertFollowUps([followup1, followup2]);
 
+        var discharge1:Discharge = {
+            dischargeId: 1,
+            admissionDate: '2022-01-01',
+            admissionWeight: 0,
+            targetWeight: 0,
+            dischargeDate: '2022-01-01',
+            dischargeWeight: 0,
+            outcome: 'good',
+            treatmentProtocol: 'idk',
+            samId: 1
+        };
+
+        var discharge2:Discharge = {
+            dischargeId: 2,
+            admissionDate: '2022-01-02',
+            admissionWeight: 0,
+            targetWeight: 0,
+            dischargeDate: '2022-01-02',
+            dischargeWeight: 10,
+            outcome: 'bad',
+            treatmentProtocol: 'idk2',
+            samId: 1
+        };
+
+        this.insertDischarge([discharge1, discharge2]);
+        
+
     }
     
     static async test(){
 
-        await this.fillFollowup(1,60,35,80,"good","fever");
+        // var result = await this.db.executeSql("SELECT * FROM discharge_summary", []);
+        // console.log(result.rows.item(0));
+        var a = await this.getLatestDischarge(1);
+        console.log(a);
+        // await this.fillFollowup(1,60,35,80,"good","fever");
 
-        console.log(this.getPatient(1));
+        // console.log(this.getPatient(1));
 
         // var result = await this.db.executeSql("select * from followup", []);
         // console.log(result.rows.item(0));

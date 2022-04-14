@@ -24,7 +24,7 @@ import '@ionic/react/css/display.css';
 /* Theme variables */
 import './theme/variables.css';
 import TempFile from './pages/TempFile';
-import WorkerProfilePage from './pages/WorkerProfilePage';
+// import WorkerProfilePage from './pages/WorkerProfilePage';
 import NotificationsPage from './pages/NotificationsPage';
 import PatientComponent from './components/PatientComponent';
 import PatientProfilePage from './pages/PatientProfilePage';
@@ -62,13 +62,13 @@ const App: React.FC = () => {
             : <Redirect to="/login" />
           );
         }} />
-        <Route exact path="/workerProfile" render={(props)=>{
+        {/* <Route exact path="/workerProfile" render={(props)=>{
           return (
             authContext?.auth?.loggedIn
-              ? <WorkerProfilePage />
+              // ? <WorkerProfilePage />
               : <Redirect to="/login" />
           );
-        }} />
+        }} /> */}
         <Route exact path="/notifications" render = {(props)=>{
           return (
             authContext?.auth?.loggedIn

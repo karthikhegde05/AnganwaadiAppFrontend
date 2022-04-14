@@ -11,6 +11,8 @@ import { useEffect, useState } from 'react';
 import Axios, { AxiosResponse } from 'axios';
 import PatientProfilePage from './PatientProfilePage';
 import LocalDB from '../storage/LocalDB';
+import { arrowBack } from 'ionicons/icons';
+import { ListenOptions } from 'net';
 
 type Followup = {
   followupId: Number,
@@ -19,8 +21,7 @@ type Followup = {
   hasCompleted: boolean,
   patientId: Number
 }
-import { arrowBack } from 'ionicons/icons';
-import { ListenOptions } from 'net';
+
 //import {giveSearchText} from '../components/HomeSearchBar';
 
 const Home: React.FC = () => {

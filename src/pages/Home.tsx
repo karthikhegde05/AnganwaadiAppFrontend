@@ -1,5 +1,5 @@
-import { IonButton, IonCard, IonCardContent, IonCheckbox, IonCol, IonContent, IonHeader, IonIcon, IonLabel, IonPage, IonRow, IonSearchbar, IonTitle, IonToolbar, SearchbarChangeEventDetail } from '@ionic/react';
-import { RouteComponentProps, useLocation, useParams } from 'react-router';
+import { IonButton, IonButtons, IonCard, IonCardContent, IonCheckbox, IonCol, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonListHeader, IonPage, IonRefresher, IonRefresherContent, IonRow, IonSearchbar, IonSegment, IonSegmentButton, IonSelect, IonSelectOption, IonTitle, IonToolbar, RefresherEventDetail, SearchbarChangeEventDetail, useIonModal } from '@ionic/react';
+import { RouteComponentProps, useLocation, useParams, useHistory } from 'react-router-dom';
 import HomeSearchBar from '../components/HomeSearchBar';
 import NotificationsComponent from '../components/NotificatonsComponent';
 import PatientComponent from '../components/PatientComponent';
@@ -11,8 +11,10 @@ import { useEffect, useState } from 'react';
 import Axios, { AxiosResponse } from 'axios';
 import PatientProfilePage from './PatientProfilePage';
 import LocalDB from '../storage/LocalDB';
-import { arrowBack } from 'ionicons/icons';
+import { funnel, personCircleOutline, logOutOutline, caretForward, checkmark } from 'ionicons/icons';
 import { ListenOptions } from 'net';
+import FollowUpListItem from '../components/FollowUpListItem';
+import SyncClient from '../httpClient/SyncClient';
 
 type Followup = {
   followupId: Number,
@@ -22,29 +24,44 @@ type Followup = {
   patientId: Number
 }
 
+type HomeScreenFollowUp = {
+  followupId:number,
+  deadlineDate:string,
+  completedDate:string,
+  address:string,
+  city:string,
+  patientId:number
+};
+
+
 //import {giveSearchText} from '../components/HomeSearchBar';
 
 const Home: React.FC = () => {
 
   const authContext = useAuth();
+  const location = useLocation();
 
-  // const [patientId, setPatientId] = useState<>(0);
-  // const [followupId, setFollowupId] = useState<Number>(0);
-  // const [deadlineDate, setDeadlineDate] = useState<String>("");
+  const history = useHistory();
 
-  const [lstFollowups, setLstFollowups] = useState<Followup[]>([]);
+  // upcoming
+  const [delayedFollowUps, setDelayedFollowUps] = useState<HomeScreenFollowUp[]>([]);
+  const [todayFollowUps, setTodayFollowUps] = useState<HomeScreenFollowUp[]>([]);
+  const [thisWeekFollowUps, setThisWeekFollowUps] = useState<HomeScreenFollowUp[]>([]);
+  const [laterFollowUps, setLaterFollowUps] = useState<HomeScreenFollowUp[]>([]);
+
+  // completed
+  const [editableFollowUps, setEditableFollowUps] = useState<HomeScreenFollowUp[]>([]);
+  const [nonEditableFollowUps, setNonEditableFollowUps] = useState<HomeScreenFollowUp[]>([]);
+
   
-  const [searchFollowupText, setSearchFollowupText] = useState("");
-  const [interFollowupText, setInterFollowupText] = useState("");
+  const [filter, setFilter] = useState<FilterState>({status:"upcoming", address:"", city:""});
 
-  const [searchPatientText, setSearchPatientText] = useState("");
-  const [interPatientText, setInterPatientText] = useState("");
 
-  const [searchDeadlineText, setSearchDeadlineText] = useState("");
-  const [interDeadlineText, setInterDeadlineText] = useState("");
 
-  const [searchCompletedText, setSearchCompletedText] = useState("");
-  const [interCompletedText, setInterCompletedText] = useState("");
+  const [showFilterModal, dismissFilterModal] = useIonModal(FilterModal, {
+    filterState: filter,
+    updateState: function(){console.log(filter)}
+  });
 
   const logout = async() => {
     if(authContext!=null){
@@ -52,127 +69,291 @@ const Home: React.FC = () => {
       }
   }
 
-  const makingSearch = () => {
-    setSearchFollowupText(interFollowupText);
-    setSearchPatientText(interPatientText);
-    setSearchDeadlineText(interDeadlineText);
-    setSearchCompletedText(interCompletedText);
+  const showProfile = () => {
+
+    history.push("/workerProfile");
+
   }
   
 
-  const filterFollowup = (lstFollowups: any[]) => {
-    return lstFollowups.filter(followUp => String(followUp.followupId).startsWith(searchFollowupText))
-                       .filter(followUp => String(followUp.patientId).startsWith(searchPatientText))
-                       .filter(followUp => searchDeadlineText == '' ||  String(followUp.deadlineDate).localeCompare(searchDeadlineText) <= 0)
-                       .filter(followUp => searchCompletedText == '' || String(followUp.completedDate).localeCompare(searchCompletedText) >=0);
+  const filterFollowup = (lstFollowups: HomeScreenFollowUp[]) => {
+
+      return lstFollowups
+        .filter(followUp => String(followUp.address).startsWith(filter.address))
+        .filter(followUp => followUp.city.startsWith(filter.city))
+        .filter(followUp =>
+          ((followUp.completedDate !== null) && (filter.status == 'completed')) ||
+          ((followUp.completedDate === null) && (filter.status == 'upcoming'))
+        );
   }
   
-  const GetFollowupDetailsSuccess = (response:AxiosResponse) => {
-    if(response.data.nullObj==false){
-      setLstFollowups(response.data.lstFollowups);
-    }
-  };
 
   const GetFollowupDetails = async() => {
-      // const result = await Axios.get("http://localhost:8081/profileFollowup/" + authContext?.auth?.awwId)
-      //             .then((response)=>{console.log("fetched"); return GetFollowupDetailsSuccess(response);})
-      //             .catch((err)=>{console.log(err); return "error";});
-      await LocalDB.open();
-      var l = await LocalDB.getFollowUps();
-      setLstFollowups(l);
-  };
 
+      await LocalDB.open();
+      
+      var result = await LocalDB.getHomeScreenFollowUps("upcoming");
+
+      console.log(result);
+
+      const date = new Date();
+      const today = date.toISOString().split("T")[0]; 
+      //split1 : index of first followup not in the past
+      const split1 = result.findIndex((followUp:HomeScreenFollowUp) => {
+        return (today.localeCompare(followUp.deadlineDate) != 1);
+      });
+
+      console.log(split1);
+
+      if(split1 == -1){
+        setDelayedFollowUps(result);
+        console.log(delayedFollowUps);
+        return;
+      }
+      //if there are delayed followups
+      else if(split1 != 0){
+        setDelayedFollowUps(result.slice(0,split1));
+      }
+
+      date.setDate(date.getDate() + 1);
+      const tomorrow = date.toISOString().split("T")[0];
+
+      const split2 = result.findIndex((followUp:HomeScreenFollowUp) => {
+        return (tomorrow.localeCompare(followUp.deadlineDate) != 1);
+      });
+
+      if(split2 == -1){
+        setTodayFollowUps(result.slice(split1));
+        return;
+      }
+
+      setTodayFollowUps(result.slice(split1, split2));
+
+      date.setDate(date.getDate() + 7);
+      const nextWeek = date.toISOString().split("T")[0];
+
+      const split3 = result.findIndex((followUp:HomeScreenFollowUp) => {
+        return (nextWeek.localeCompare(followUp.deadlineDate) != 1);
+      });
+
+      if(split3 == -1){
+        setThisWeekFollowUps(result.slice(split2));
+        return;
+      }
+
+      setThisWeekFollowUps(result.slice(split2, split3));
+      setLaterFollowUps(result.slice(split3));
+
+      result = await LocalDB.getHomeScreenFollowUps("completed");
+      const last_sync = await LocalDB.getLastSync();
+
+      console.log(result);
+      const split4 = result.findIndex((followUp:HomeScreenFollowUp) => {
+        return (last_sync.localeCompare(followUp.completedDate) == 1);
+      });
+
+      setEditableFollowUps(result.slice(0,split4));
+      setNonEditableFollowUps(result.slice(split4));
+      
+      console.log(split4);
+      console.log(editableFollowUps);
+      console.log(last_sync);
+
+
+  };
+  
   useEffect(() => {
       GetFollowupDetails();
-  }, []); 
+  }, [location]); 
 
-  async function sync(){
-    LocalDB.open();
-    await LocalDB.sync();
-    await GetFollowupDetails();
-    console.log(lstFollowups);
+  async function sync(event: CustomEvent<RefresherEventDetail>){
+    // LocalDB.open();
+    // await LocalDB.sync();
+    // await GetFollowupDetails();
+    // console.log(lstFollowups);
+    // console.log(laterFollowUps);
+
+    await SyncClient.sync();
+
+    setTimeout(() => {
+      GetFollowupDetails();
+      event.detail.complete();    
+    }, 2000);
+    
+    
+  }
+
+  
+
+  function fabFilterModal(){
+    showFilterModal();
   }
 
   return (
     <IonPage>
-      <IonHeader>
+      <IonHeader translucent>
         <IonToolbar>
-          <IonRow className = "Title">
-            <IonCol>
-              <IonTitle>Home page</IonTitle>    
-            </IonCol>
-
-            <IonCol />
-            <IonCol />
-            <IonCol />
-              <IonButton onClick = {logout}>Logout <IonIcon slot="start" icon={arrowBack} />
-
-          </IonButton>
-          </IonRow>    
+          
+            <IonButtons slot='start'>
+              <IonButton onClick={showProfile}><IonIcon icon={personCircleOutline} slot='start' /> profile</IonButton>
+            </IonButtons>
+            
+            <IonButtons slot='end'>
+              <IonButton onClick = {logout} slot='end'>logout<IonIcon icon={logOutOutline} slot='end'/></IonButton>
+            </IonButtons>
+            
+              
         </IonToolbar>
       </IonHeader>
-      <IonContent>
-        <IonCard>
-          <IonCardContent>
-            <IonRow className="ion-justify-content-center">
-              <IonCol>
-                <WorkerProfileComponent />
-              </IonCol>
-              <IonCol>
-                <NotificationsComponent />
-              </IonCol>
-            </IonRow>
-          </IonCardContent>
-        </IonCard>
-        {/* <IonCard> */}
-        <IonRow>
-          <IonCol>
-        <IonSearchbar value={interFollowupText} onIonChange={e => {setInterFollowupText(e.detail.value!)}} 
-        placeholder = "Search by Followup ID" animated showCancelButton="focus"  autocomplete="off" color={"warning"} debounce={500}>
-        </IonSearchbar>
-        </IonCol>
-        <IonCol>
-        <IonSearchbar value={interPatientText} onIonChange={e => {setInterPatientText(e.detail.value!)}} 
-        placeholder = "Search by Patient ID" animated showCancelButton="focus"  autocomplete="off"  color={"warning"} debounce={500}>
-        </IonSearchbar>
-        </IonCol>
-        <IonCol>
-        <IonSearchbar value={interDeadlineText} onIonChange={e => {setInterDeadlineText(e.detail.value!)}} 
-        placeholder = "Search by deadline before date" animated showCancelButton="focus"  autocomplete="off" color = {"warning"} debounce={500}>
-        </IonSearchbar>
-        </IonCol>
-        <IonCol>
-        <IonSearchbar value={interCompletedText} onIonChange={e => {setInterCompletedText(e.detail.value!)}} 
-        placeholder = "Search by completed after date" animated showCancelButton="focus"  autocomplete="off" color = {"warning"} debounce={500}>
-        </IonSearchbar>
-        </IonCol>
-        </IonRow> 
-      
-        <IonButton onClick = {makingSearch}> Search by above parameters <IonIcon slot="start"/>
-          </IonButton>
-        
-  
-        {/* </IonCard> */}
+      <IonContent fullscreen>
+        <IonRefresher slot='fixed' onIonRefresh={sync}><IonRefresherContent /></IonRefresher>
 
-        <IonCard>
-          <IonCardContent>
-              <ul>{/* <PatientComponent /> */}
-              {filterFollowup(lstFollowups).map((followup, index) => {
-           
-                return (
-                  <IonRow className="ion-justify-content-center">
-                    <PatientComponent key={index} {...followup} /> 
-                  </IonRow>
-                );
-              })}
-              </ul>
-          </IonCardContent>
-        </IonCard>
-        <IonButton onClick={sync}>Sync</IonButton>
+        {(filter.status == "upcoming")?(
+        <>
+          {(delayedFollowUps != [])?(<IonList>
+            <IonListHeader  color='danger'>Delayed</IonListHeader>
+            {filterFollowup(delayedFollowUps).map((followup,index) =>{
+              return (
+                <HomeScreenFollowUpListItem key={index} {...followup}/>
+              );
+            })}
+          </IonList>):(<div></div>)}
+          {(todayFollowUps != [])?(<IonList>
+            <IonListHeader color='warning'>Today</IonListHeader>
+            {filterFollowup(todayFollowUps).map((followup,index) =>{
+              return (
+                <HomeScreenFollowUpListItem key={index} {...followup}/>
+              );
+            })}
+          </IonList>):(<div></div>)}{(thisWeekFollowUps != [])?(<IonList>
+            <IonListHeader color="success">This Week</IonListHeader>
+            {filterFollowup(thisWeekFollowUps).map((followup,index) =>{
+              return (
+                <HomeScreenFollowUpListItem key={index} {...followup}/>
+              );
+            })}
+          </IonList>):(<div></div>)}{(laterFollowUps != [])?(<IonList>
+            <IonListHeader color="success">Later</IonListHeader>
+            {filterFollowup(laterFollowUps).map((followup,index) =>{
+              return (
+                <HomeScreenFollowUpListItem key={index} {...followup}/>
+              );
+            })}
+          </IonList>):(<div></div>)}
+        </>
+        ):(
+        <>
+          {(delayedFollowUps != [])?(<IonList>
+            <IonListHeader>Editable</IonListHeader>
+            {filterFollowup(editableFollowUps).map((followup,index) =>{
+              return (
+                <HomeScreenFollowUpListItem key={index} {...followup}/>
+              );
+            })}
+          </IonList>):(<div></div>)}
+          {(todayFollowUps != [])?(<IonList>
+            <IonListHeader>Commited</IonListHeader>
+            {filterFollowup(nonEditableFollowUps).map((followup,index) =>{
+              return (
+                <HomeScreenFollowUpListItem key={index} {...followup}/>
+              );
+          })}
+           </IonList>):(<div></div>)}
+        
+        </>)}
+        <IonFab vertical='bottom' horizontal='end' slot='fixed'>
+          <IonFabButton onClick={fabFilterModal}><IonIcon icon={funnel} /></IonFabButton>
+        </IonFab>
         </IonContent>
     </IonPage>
   );
 };
+
+type historyTypeProps = {
+  patientId: Number
+}
+
+const HomeScreenFollowUpListItem: React.FC<HomeScreenFollowUp> = (props: HomeScreenFollowUp) =>{
+
+  const history = useHistory<historyTypeProps>();
+  var pressed:boolean = false;
+
+  const today = new Date().toISOString().split("T")[0];
+  var color;
+
+  if(props.completedDate === null)
+    color = (props.deadlineDate.localeCompare(today) == -1)? "danger":(props.deadlineDate.localeCompare(today) == 0?"warning":"success");
+  else
+    color = "default";
+
+  const redirectToPatientProfile = () =>{
+    console.log("a");
+    history.push({pathname:"patientProfile", state: {patientId: props.patientId}})
+  };
+
+  return (
+      <IonItem color={color}>
+          <IonLabel>
+              <h1>{props.city}</h1>
+              <h2>{props.address}</h2>
+              <h2>{props.deadlineDate}</h2>
+          </IonLabel>
+
+          <IonButton disabled={pressed} onClick={redirectToPatientProfile}><IonIcon icon={caretForward}/></IonButton>
+      </IonItem>
+  );
+};
+
+type FilterState = {
+  status: string
+  address: string
+  city: string
+}
+
+type FilterProps = {
+  filterState: FilterState
+  updateState: () => void
+}
+
+const FilterModal: React.FC<FilterProps> = (props: FilterProps) =>{
+
+
+  return (
+    <IonPage>
+      <IonHeader>
+          <IonToolbar>
+            <IonTitle>Filter</IonTitle>
+            <IonButtons slot='end'>
+              <IonButton>apply<IonIcon icon={checkmark} slot='end' /></IonButton>
+            </IonButtons>
+          </IonToolbar>
+        </IonHeader>
+      <IonContent>
+        
+        <IonList>
+          <IonItem>
+            <IonLabel>Status</IonLabel>
+            <IonSelect value={props.filterState.status} onIonChange={(e)=> {props.filterState.status = e.detail.value; props.updateState()} }>
+              {/* <IonSelectOption value="all">All</IonSelectOption> */}
+              <IonSelectOption value="completed">Completed</IonSelectOption>
+              <IonSelectOption value="upcoming">Upcoming</IonSelectOption>
+              {/* <IonSelectOption value="delayed">Delayed</IonSelectOption> */}
+            </IonSelect>
+          </IonItem>
+          <IonItem>
+            <IonLabel position="floating">Address</IonLabel>
+            <IonInput type="text" value = {props.filterState.address} onIonChange={(e)=> {props.filterState.address = e.detail.value!; props.updateState()} }/>
+          </IonItem>
+          <IonItem>
+            <IonLabel position="floating">City</IonLabel>
+            <IonInput type="text" value = {props.filterState.city} onIonChange={(e)=> {props.filterState.city = e.detail.value!; props.updateState()} }/>
+          </IonItem>
+        </IonList>
+    </IonContent>
+    </IonPage>
+
+  )
+}
 
 export default Home;
 

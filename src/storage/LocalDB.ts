@@ -14,6 +14,14 @@ type Followup = {
     healthStatus:healthStatusDTO
 }
 
+type HomeScreenFollowUps = {
+    followupId:number,
+    deadlineDate:string,
+    completedDate:string,
+    address:string,
+    city:string,
+    patientId:number
+};
 
 
 type healthStatusDTO = {
@@ -56,6 +64,7 @@ type patientDTO = {
     referredBy: string,
     last_updated: string,
     followups: FollowupDTO[]
+    dischargeSummary: Discharge | null
 }
 
 type WorkerProfile = {
@@ -118,7 +127,8 @@ export default class LocalDB{
                 religion string,
                 bpl integer,
                 referred_by string,
-                last_updated datetime
+                last_updated datetime,
+                discharge_id integer
             );
         `).catch(error => console.log(error));
 
@@ -148,7 +158,7 @@ export default class LocalDB{
         )`);
 
         this.db.executeSql("insert into worker_details values (?,?,?,?,?,?,?)", [
-            "3",
+            "2",
             "john", 
             "999999999",
             "john",
@@ -170,22 +180,113 @@ export default class LocalDB{
         )`);
 
         this.test_populate();
-
+        type HomeScreenFollowUps = {
+            name:string
+        };
     }
 
-    static async sync(){
+    // static async sync(){
 
-        var result;
-        result = await this.db.executeSql('SELECT * FROM sync', []);
-        var last_sync:string = result.rows.item(0).last_sync;
+    //     var result;
+    //     result = await this.db.executeSql('SELECT * FROM sync', []);
+    //     var last_sync:string = result.rows.item(0).last_sync;
 
-        result = await this.db.executeSql('SELECT * FROM worker_details', []);
-        var workerId:string = result.rows.item(0).aww_id.toString();
-        var response = await SyncClient.sync(workerId, last_sync);
-        var newLastSync = await this.insertFollowUps(response);
+    //     result = await this.db.executeSql('SELECT * FROM worker_details', []);
+    //     var workerId:string = result.rows.item(0).aww_id.toString();
+    //     var response = await SyncClient.sync(workerId, last_sync);
+    //     var newLastSync = await this.insertFollowUps(response);
         
-        this.db.executeSql(`UPDATE sync SET last_sync = ? WHERE table_name = 'followup'`, [newLastSync])
-        .catch((error) => {console.log(error)});
+    //     this.db.executeSql(`UPDATE sync SET last_sync = ? WHERE table_name = 'followup'`, [newLastSync])
+    //     .catch((error) => {console.log(error)});
+
+    // }
+
+    static async setLastSync(newLastSync: string){
+        this.db.executeSql(`UPDATE sync SET last_sync = ? WHERE table_name = 'followup'`, [newLastSync]);
+    }
+
+    static async getLastUpdate(samIds: number[]):Promise<string[]>{
+
+        var lastSyncs:string[] = [];
+
+        
+        for(var i = 0; i < samIds.length; i++){
+            var result = await this.db.executeSql(`SELECT last_updated FROM patient WHERE sam_id = ?`, [samIds[i]]);
+            
+            if(result.rows.length == 0){
+                lastSyncs.push("2000-01-01T01:00:00");
+            }
+            else{
+                lastSyncs.push(result.rows.item(0).last_updated);
+            }
+        };
+
+        return lastSyncs;
+    }
+
+    static async getNewFollowUps(){
+
+        var result = await this.db.executeSql(`
+            SELECT * FROM followup
+            WHERE completed_date > (
+                SELECT last_sync from sync
+                WHERE table_name = "followup"
+            )
+        `,[]);
+
+        var followups:any = {};
+
+        for(var i = 0; i < result.rows.length; i++){
+            
+            const f = result.rows.item(i);
+            var index:string = f.followup_id.toString();
+            followups[index] = {
+                    height: f.height,
+                    weight: f.weight,
+                    muac: f.muac,
+                    growthStatus: f.growth_status,
+                    otherSymptoms: f.other_symptoms,
+                    date: f.completed_date
+                };
+        }
+
+        return followups;
+    }
+
+    public static async getHomeScreenFollowUps(status:string):Promise<HomeScreenFollowUps[]>{
+        
+        const order = (status==="completed")?"f.completed_date DESC":"f.deadline_date";
+        const completed = (status==="completed")?1:0;
+        var result = await this.db.executeSql(`
+            SELECT f.followup_id, f.deadline_date, f.completed_date, f.sam_id, p.address, p.city
+            FROM followup as f INNER JOIN patient as p
+            ON f.sam_id = p.sam_id
+            WHERE f.completed = ?
+            ORDER BY ?
+        `,[completed, order]);
+
+        
+
+        const size = result.rows.length;
+
+        const followups:HomeScreenFollowUps[] = [];
+
+        for(var i = 0; i < size; i++){
+            
+            const row = result.rows.item(i);
+            const followup:HomeScreenFollowUps = {
+                followupId: row.followup_id,
+                deadlineDate: row.deadline_date,
+                completedDate: row.completed_date,
+                address: row.address,
+                city: row.city,
+                patientId: row.sam_id
+            };
+
+            followups.push(followup);
+        }
+
+        return followups;
 
     }
 
@@ -221,7 +322,7 @@ export default class LocalDB{
         
     }
 
-    private static async insertPatients(patients: patientDTO[]){
+    static async insertPatients(patients: patientDTO[]){
         try{
             await this.db.transaction((t) =>{
                 patients.forEach((patient) =>{
@@ -290,7 +391,7 @@ export default class LocalDB{
         
     }
 
-    private static async getLatestDischarge(samId:number):Promise<Discharge>{
+    public static async getLatestDischarge(samId:number):Promise<Discharge>{
 
         var result = await this.db.executeSql(`
             SELECT * FROM discharge_summary
@@ -299,6 +400,7 @@ export default class LocalDB{
             LIMIT 1
         `, [samId]);
 
+        console.log(result.rows);
         result = result.rows.item(0);
 
         const discharge: Discharge = {
@@ -316,7 +418,7 @@ export default class LocalDB{
         return discharge;
     }
 
-    private static async insertFollowUps(followups: FollowupDTO[]):Promise<string>{
+    static async insertFollowUps(followups: FollowupDTO[]):Promise<string>{
 
         var max:number = 0;
         var latest:string = "";
@@ -330,7 +432,7 @@ export default class LocalDB{
                         followup.followupId,
                         followup.samId,
                         followup.workerId,
-                        followup.deadline_date,
+                        followup.deadline_date.split('T')[0],
                         followup.completed_date,
                         followup.completed?1:0,
                         healthstatus.hsId,
@@ -365,6 +467,11 @@ export default class LocalDB{
     public static async fillFollowup(followupId:number, height:number, weight:number, muac:number, growthStatus:string, otherSymptoms:string){
 
 
+        var l = new Date();
+        l.setHours(l.getHours() + 5);
+        l.setMinutes(l.getMinutes() + 30);
+        
+
         await this.db.executeSql(`UPDATE followup
         SET completed_date = ?,
             completed=true,
@@ -375,7 +482,7 @@ export default class LocalDB{
             other_symptoms = ?
         WHERE followup_id = ?`,
         [
-            new Date().toISOString().split("T")[0],
+            l.toISOString().slice(0,-1),
             height,
             weight,
             muac,
@@ -454,7 +561,8 @@ export default class LocalDB{
             bpl:result.bpl,
             referredBy:result.referred_by,
             last_updated:result.last_updated,
-            followups: []
+            followups: [],
+            dischargeSummary: null
         };
 
         result = await this.db.executeSql("SELECT * FROM followup WHERE sam_id = ?", [sam_id]);
@@ -486,6 +594,65 @@ export default class LocalDB{
 
     }
 
+    static async getLastSync():Promise<string>{
+       
+        var result = await this.db.executeSql("SELECT * FROM sync", []);
+        result = result.rows.item(0);
+
+        return result.last_sync;
+    }
+
+    static async updatePatients(patients: patientDTO[]){
+
+        for(var i = 0; i < patients.length; i++) {
+
+            var patient = patients[i];
+            await this.insertFollowUps(patient.followups);
+            console.log(patient);
+            await this.db.executeSql("INSERT OR IGNORE INTO patient values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", [
+                patient.samId,
+                patient.uhId,
+                patient.rchId,
+                patient.name,
+                patient.age,
+                patient.dob,
+                patient.gender,
+                patient.address,
+                patient.city,
+                patient.contactNumber,
+                patient.relationshipStatus,
+                patient.caste,
+                patient.religion,
+                patient.bpl,
+                patient.referredBy,
+                patient.last_updated,
+                patient.dischargeSummary!.dischargeId
+            ]);
+
+            await this.db.executeSql(`
+                UPDATE patient 
+                SET discharge_id = ?
+                WHERE sam_id = ?
+            `, [patient.dischargeSummary!.dischargeId, patient.samId]);
+
+            var discharge = patient.dischargeSummary!;
+            console.log(discharge);
+            await this.db.executeSql("INSERT INTO discharge_summary values (?,?,?,?,?,?,?,?,?)", [
+                discharge.dischargeId,
+                discharge.admissionDate,
+                discharge.admissionWeight,
+                discharge.targetWeight,
+                discharge.dischargeDate,
+                discharge.dischargeWeight,
+                discharge.outcome,
+                discharge.treatmentProtocol,
+                patient.samId
+            ]).catch((error) => console.log(error));
+        };
+        
+
+    }
+
     static async test_populate(){
 
         var patient1:patientDTO = {
@@ -505,19 +672,38 @@ export default class LocalDB{
             bpl: 'true',
             referredBy: 'me',
             last_updated: '2022-01-01T10:20:20.000',
-            followups: []
+            followups: [],
+            dischargeSummary: null
         };
-        this.insertPatients([patient1]);
+        // this.insertPatients([patient1]);
 
         var followup1:FollowupDTO = {
             followupId: 1,
             workerId: 3,
             deadline_date: '2022-01-02',
-            completed_date: '',
-            completed: false,
+            completed_date: '2022-01-02T01:00.000',
+            completed: true,
             samId: 1,
             healthStatus: {
                 hsId: 1,
+                height: 60,
+                weight: 18,
+                muac: 12,
+                growthStatus: 'regular',
+                otherSymptoms: 'none'
+            },
+            createdDate: '2022-01-01'
+        }
+
+        var followup2:FollowupDTO = {
+            followupId: 2,
+            workerId: 3,
+            deadline_date: '2022-01-05',
+            completed_date: '2022-01-02T01:00.000',
+            completed: true,
+            samId: 1,
+            healthStatus: {
+                hsId: 2,
                 height: 0,
                 weight: 0,
                 muac: 0,
@@ -527,10 +713,10 @@ export default class LocalDB{
             createdDate: '2022-01-01'
         }
 
-        var followup2:FollowupDTO = {
-            followupId: 2,
+        var followup3:FollowupDTO = {
+            followupId: 3,
             workerId: 3,
-            deadline_date: '2022-01-05',
+            deadline_date: '2022-01-06',
             completed_date: '',
             completed: false,
             samId: 1,
@@ -545,7 +731,79 @@ export default class LocalDB{
             createdDate: '2022-01-01'
         }
 
-        this.insertFollowUps([followup1, followup2]);
+        var followup4:FollowupDTO = {
+            followupId: 4,
+            workerId: 3,
+            deadline_date: '2022-01-06',
+            completed_date: '',
+            completed: false,
+            samId: 1,
+            healthStatus: {
+                hsId: 2,
+                height: 0,
+                weight: 0,
+                muac: 0,
+                growthStatus: '',
+                otherSymptoms: ''
+            },
+            createdDate: '2022-01-01'
+        }
+
+        var followup5:FollowupDTO = {
+            followupId: 5,
+            workerId: 3,
+            deadline_date: '2022-01-07',
+            completed_date: '',
+            completed: false,
+            samId: 1,
+            healthStatus: {
+                hsId: 2,
+                height: 0,
+                weight: 0,
+                muac: 0,
+                growthStatus: '',
+                otherSymptoms: ''
+            },
+            createdDate: '2022-01-01'
+        }
+
+        var followup6:FollowupDTO = {
+            followupId: 6,
+            workerId: 3,
+            deadline_date: '2022-01-09',
+            completed_date: '',
+            completed: false,
+            samId: 1,
+            healthStatus: {
+                hsId: 2,
+                height: 0,
+                weight: 0,
+                muac: 0,
+                growthStatus: '',
+                otherSymptoms: ''
+            },
+            createdDate: '2022-01-01'
+        }
+
+        var followup7:FollowupDTO = {
+            followupId: 7,
+            workerId: 3,
+            deadline_date: '2022-01-22',
+            completed_date: '',
+            completed: false,
+            samId: 1,
+            healthStatus: {
+                hsId: 2,
+                height: 0,
+                weight: 0,
+                muac: 0,
+                growthStatus: '',
+                otherSymptoms: ''
+            },
+            createdDate: '2022-01-01'
+        }
+
+        // this.insertFollowUps([followup1, followup2, followup3, followup4, followup5, followup6, followup7]);
 
         var discharge1:Discharge = {
             dischargeId: 1,
@@ -571,17 +829,51 @@ export default class LocalDB{
             samId: 1
         };
 
-        this.insertDischarge([discharge1, discharge2]);
+        // this.insertDischarge([discharge1, discharge2]);
         
 
     }
+
+    
     
     static async test(){
 
+        // await this.reset();
+        await this.open();
+        // await this.init();
+        // await SyncClient.sync();
+        
+        // setTime
+
+        // var a = await this.getLatestDischarge(4);
+        // console.log(a);
+
+        // var a = await this.db.executeSql(`select * from discharge_summary`,[]);
+
+        // console.log(a.rows.item(0));
+
+        // var a = await this.getLastSync();
+        // console.log(a);
+
+        var b = await this.getFollowUps();
+        console.log(b);
+
+        // var c = await this.getHomeScreenFollowUps("upcoming");
+        // console.log(c); 
+
+        // var a = await this.getLastUpdate([1,2]);
+        // console.log(a);
+
+        // var a = await this.getNewFollowUps();
+        // console.log(a);
+
+        // var a = await this.getHomeScreenFollowUps();
+        // console.log(a);
+
         // var result = await this.db.executeSql("SELECT * FROM discharge_summary", []);
         // console.log(result.rows.item(0));
-        var a = await this.getLatestDischarge(1);
-        console.log(a);
+        // var a = await this.getLatestDischarge(1);
+        // console.log(a);
         // await this.fillFollowup(1,60,35,80,"good","fever");
 
         // console.log(this.getPatient(1));

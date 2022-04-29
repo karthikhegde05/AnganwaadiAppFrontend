@@ -2,9 +2,9 @@ ion-row{
     --ion-padding: 15px;
 }
 
-p{
+/* p{
     text-decoration: underline;
-}
+} */
 
 ion-input.credential{
     --placeholder-opacity: 0.9;

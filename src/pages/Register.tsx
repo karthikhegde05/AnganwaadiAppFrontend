@@ -36,14 +36,15 @@ const Register: React.FC = () => {
         
         // await LocalDB.open();
         // console.log("wowow");
-        await LocalDB.sync();
+        // await LocalDB.sync();
         // console.log("asasa");
         // LocalDB.close();
 
     }
 
     function sync(){
-      LocalDB.sync();
+      // LocalDB.sync();
+      SyncClient.sync();
     }
 
     function init(){

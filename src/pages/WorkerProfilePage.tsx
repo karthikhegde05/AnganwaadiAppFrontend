@@ -4,10 +4,10 @@
 // import React, {useEffect, useState} from 'react';
 // // import { useTable } from 'react-table';
 // import useAuth from '../hooks/useAuth';
-// import styled from 'styled-components';
+// // import styled from 'styled-components';
 // // import DataTable from 'react-data-table-component';
 // import { moon } from "ionicons/icons";
-// import styles from "./WorkerProfilePage.module.scss";
+// // import styles from "./WorkerProfilePage.module.scss";
 
 // import { arrowBackOutline, arrowForward, bookmarkOutline, chatboxEllipsesOutline, ellipsisHorizontal, imageOutline, personAddOutline } from "ionicons/icons";
 // import { useLocation } from 'react-router-dom';

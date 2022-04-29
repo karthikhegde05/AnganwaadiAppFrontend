@@ -35,6 +35,7 @@ const PatientComponent: React.FC<FollowupProps> = (props: FollowupProps) =>{
 
     return (
         <IonButton disabled={pressed} onClick={redirectToPatientProfile} color = {color}>Id:{props.followupId}, Date:{props.deadlineDate}, Patient:{props.patientId}</IonButton>
+        
     );
 };
 

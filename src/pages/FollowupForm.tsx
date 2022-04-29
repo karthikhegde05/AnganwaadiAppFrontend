@@ -1,10 +1,13 @@
-import { IonButton, IonCard, IonCardContent, IonCol, IonContent, IonHeader, IonIcon, IonInput, IonPage, IonRow, IonTitle, IonToolbar, useIonRouter } from "@ionic/react";
+import { IonButton, IonModal, IonButtons,IonCard, IonCardContent, IonCol, IonContent, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonPage, IonRow, IonTitle, IonToolbar, useIonAlert, useIonRouter, useIonModal } from "@ionic/react";
 import React, {useState} from "react";
 import { useHistory, useLocation } from "react-router";
 import { boysGrowthMap , girlsGrowthMap} from "../components/GrowthMap";
 import Axios, {AxiosResponse} from 'axios';
-import { arrowBack } from "ionicons/icons";
+import { arrowBack, checkmarkCircle, alertCircleOutline } from "ionicons/icons";
 import useAuth from "../hooks/useAuth";
+import './FollowupForm.css';
+import LocalDB from '../storage/LocalDB';
+
 
 type FollowupProps = {
     followupId: Number,
@@ -15,23 +18,38 @@ type FollowupProps = {
     gender: String
 }
 
+type FollowupFormData = {
+  samId: number,
+  deadlineDate:string,
+  gender: string,
+  followupId: number
+}
+
 type patientProfileProps = {
     patientId: Number
 }
 
-
 const FollowupFormComponent: React.FC = () =>{
-    const hist = useLocation<FollowupProps>();
+    const hist = useLocation<FollowupFormData>();
 
     const history = useHistory<patientProfileProps>();
 
-    const [height, setHeight] = useState(1);
+    const [height, setHeight] = useState(0);
     const [weight, setWeight] = useState(0);
-    const [muac, setMuac] = useState();
-    const [growthStatus, setGrowthStatus] = useState();
-    const [otherSymptoms, setOthSymptoms] = useState();
+    const [muac, setMuac] = useState(0);
+    const [growthStatus, setGrowthStatus] = useState("");
+    const [otherSymptoms, setOthSymptoms] = useState("");
+    const [gender, setGender] = useState<string>();
 
-    const gender:String = hist.state.gender;
+    const [presentSAMalert, dismiss] = useIonModal(SAMAlert);
+
+    const [presentRegularAlert, dismissa] = useIonModal(RegularAlert);
+
+    const [alerter] = useIonAlert();
+
+    if(gender === undefined){
+      setGender(hist.state.gender);
+    }
 
     
     const authContext = useAuth();
@@ -41,90 +59,151 @@ const FollowupFormComponent: React.FC = () =>{
         }
     }
 
-    const formSubmissionSuccess = (response:AxiosResponse) => {
+    const formSubmission = async() => {
 
-        
-        if(response.data.result==true){
-            history.push({
-                pathname: "/patientProfile",
-                state: {patientId: hist.state.patientId}
-            });
+
+        // var destUrl = "";
+        // let ratio = weight;//height;
+
+        // console.log(weight);
+        // if(gender == "M"){
+        //   if(ratio < boysGrowthMap[height]){
+        //     alert("SAM child");
+        //     destUrl = "http://localhost:8081/followupFormSubmission/" + hist.state.followupId.toString();
+        //   }
+        //   else{
+        //     alert("Healthy");
+        //     destUrl = "http://localhost:8081/followupFormSubmission/" + hist.state.followupId.toString();
+        //   }
+        // }
+
+        // if(gender == "F"){
+        //   if(ratio < girlsGrowthMap[height]){
+        //     alert("SAM child");
+        //     destUrl = "http://localhost:8081/followupFormSubmission/" + hist.state.followupId.toString();
+        //   }
+        //   else{
+        //     alert("Healthy");
+        //     destUrl = "http://localhost:8081/followupFormSubmission/" + hist.state.followupId.toString();
+        //   }
+        // }
+
+        // console.log(gender);
+        // console.log(destUrl);
+      var gs = ""
+      let gender = hist.state.gender;
+      console.log(gender)
+        if(gender == "M"){
+          console.log("entered")
+          if(weight <= boysGrowthMap[height]){
+            gs = "SAM";
+            console.log("entered1")
+          }
+          else{
+            console.log("entered2")
+            gs = "regular";
+          }
+        }
+        else if(gender == "F"){
+          if(weight <= girlsGrowthMap[height]){
+            gs = "SAM";
+          }
+          else{
+            gs = "regular";
+          }
+        }
+        LocalDB.fillFollowup(hist.state.followupId, height, weight, muac, gs, otherSymptoms);
+
+        if(gs == "regular"){
+          presentRegularAlert();
+          console.log(height, weight, muac, otherSymptoms, hist.state.gender);
+          setTimeout(() => {
+            history.go(-2);
+            history.replace("/home");
+            dismissa();
+          }, 2000);
+          
         }
         else {
-            return "invalid";
+          presentSAMalert();
+          console.log(height, weight, muac, otherSymptoms, hist.state.gender);
+          setTimeout(() => {
+            
+            history.go(-2);
+            history.replace("/home");
+            dismiss();
+          }, 2000);
+          
         }
-    };
-
-    const formSubmission = async() => {
-        var destUrl = "";
-        let ratio = weight;//height;
-
-        console.log(weight);
-        if(gender == "M"){
-          if(ratio < boysGrowthMap[height]){
-            alert("SAM child");
-            destUrl = "http://localhost:8081/followupFormSubmission/" + hist.state.followupId.toString();
-          }
-          else{
-            alert("Healthy");
-            destUrl = "http://localhost:8081/followupFormSubmission/" + hist.state.followupId.toString();
-          }
-        }
-
-        if(gender == "F"){
-          if(ratio < girlsGrowthMap[height]){
-            alert("SAM child");
-            destUrl = "http://localhost:8081/followupFormSubmission/" + hist.state.followupId.toString();
-          }
-          else{
-            alert("Healthy");
-            destUrl = "http://localhost:8081/followupFormSubmission/" + hist.state.followupId.toString();
-          }
-        }
-
-        console.log(gender);
-        console.log(destUrl);
         
 
-        const submitResult = await Axios.post(destUrl,{
-            "height": height,
-            "weight": weight,
-            "muac": muac,
-            "growthStatus": growthStatus,
-            "otherSymptoms": otherSymptoms
-        }).then((response)=>{console.log("posted"); return formSubmissionSuccess(response);})
-        .catch((err)=>{console.log(err);})
+    
     };
 
     return (
         <IonPage>
           <IonHeader>
             <IonToolbar>
-              <IonRow>           
-              <IonCol> <IonTitle>Follow up form for patientId: {hist.state.patientId}</IonTitle> </IonCol>
-              <IonCol /><IonCol />
-              <IonCol /><IonButton onClick = {logout}>Logout <IonIcon slot="start" icon={arrowBack} /> </IonButton>             
-              </IonRow>          
+
+              <IonButtons slot="start">
+                <IonButton>
+                  <IonIcon icon={arrowBack}/>
+                </IonButton>
+              </IonButtons>
             </IonToolbar>
           </IonHeader>
   
-          <IonContent>
-            <IonCard color="warning">
-              <IonCardContent className="ion-padding">
-                  <IonInput className="credential" placeholder="Height?" onIonChange={(e: any) => setHeight(e.target.value)} clearInput={true} />
-                  <IonInput className="credential" placeholder="Weight?" onIonChange={(e: any) => setWeight(e.target.value)} clearInput={true} />
-                  <IonInput className="credential" placeholder="MUAC?" onIonChange={(e: any) => setMuac(e.target.value)} clearInput={true} />
-                  <IonInput className="credential" placeholder="Growth Status?" onIonChange={(e: any) => setGrowthStatus(e.target.value)} clearInput={true} /> {/* make it radio buttons */}
-                  <IonInput className="credential" placeholder="Any Other Symptoms?" onIonChange={(e: any) => setOthSymptoms(e.target.value)} clearInput={true} />
-                  <IonRow className="ion-justify-content-center">
-                    <IonButton onClick={formSubmission}>Submit</IonButton>
-                  </IonRow>
-              </IonCardContent>
-            </IonCard>
+          <IonContent fullscreen>
+           
+            <IonList>
+              <IonItem>
+                <IonLabel position="floating">Height (cm)</IonLabel>
+                <IonInput type="number" onIonChange={(e: any) => setHeight(e.target.value)}/>
+              </IonItem>
+              <IonItem>
+                <IonLabel position="floating">Weight (kg)</IonLabel>
+                <IonInput type="number" onIonChange={(e: any) => setWeight(e.target.value)}/>
+              </IonItem>
+              <IonItem>
+                <IonLabel position="floating">MUAC (cm)</IonLabel>
+                <IonInput type="number" onIonChange={(e: any) => setMuac(e.target.value)}/>
+              </IonItem>
+              <IonItem>
+                <IonLabel position="floating">Other Symptoms</IonLabel>
+                <IonInput type="text" onIonChange={(e: any) => setOthSymptoms(e.target.value)}/>
+              </IonItem>
+            </IonList>
+            <IonButton expand="block" onClick={formSubmission} id="submit"><IonIcon icon={checkmarkCircle} slot="start"/>Submit</IonButton>
           </IonContent>    
         </IonPage>
       );
 
 };
+
+const SAMAlert: React.FC = () => {
+
+  return(
+    <IonContent color="danger">
+      <p className="splash"><IonIcon icon={alertCircleOutline} class="splash"/></p> 
+      <h1 className="splash">The child is below SAM threshold</h1>  
+    </IonContent>
+  );
+
+}
+
+const RegularAlert: React.FC = () => {
+
+  return(
+    <IonContent color="success">
+      <p className="splash"><IonIcon icon={checkmarkCircle} class="splash"/></p> 
+      <h1 className="splash">Follow Up recorded</h1>  
+    </IonContent>
+  );
+
+}
+  
+  
+
+
 
 export default FollowupFormComponent;

@@ -68,7 +68,7 @@ const Register: React.FC = () => {
         aw_address: 'tom',
         aw_location: 'tom'
       }
-      LocalDB.init(worker);
+      LocalDB.init(worker, "tom", "pass");
     }
     
   return (

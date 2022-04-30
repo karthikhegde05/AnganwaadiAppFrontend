@@ -77,7 +77,10 @@ const Login:React.FC<RouteComponentProps> = ({history}: any) => {
 
       const localResult: boolean = await LocalDB.checkLogin(username, password);
       if(localResult == false){
-        if(await LoginClient.check(username, password)){
+
+        var result = await LoginClient.check(username, password);
+        console.log(result);
+        if(result){
           history.replace("/home");
         }
         else{

@@ -55,13 +55,21 @@ export default class LoginClient{
 
         if(r.result === "valid"){
 
-            
+            console.log("valid");
 
             LocalDB.reset();
-            const w:WorkerProfile = r.worker;
+            const w:WorkerProfile = {
+                aww_id: r.worker.awwId,
+                name: r.worker.name,
+                contact_number: r.worker.contactNo,
+                username: username,
+                email: "e",
+                aw_address: r.worker.address,
+                aw_location: r.worker.locality
+            }; 
             await LocalDB.open();
-            await LocalDB.init(w);
-            await SyncClient.sync();
+            await LocalDB.init(w, username, password);
+            // await SyncClient.sync();
             return true;
         }
         else{

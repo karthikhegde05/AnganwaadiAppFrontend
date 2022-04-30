@@ -101,7 +101,7 @@ export default class LocalDB{
 
     }
 
-    static async init(worker: WorkerProfile){
+    static async init(worker: WorkerProfile, username:string, password:string){
 
         this.db.executeSql(`CREATE TABLE IF NOT EXISTS sync (
             table_name string Primary key,
@@ -179,10 +179,10 @@ export default class LocalDB{
             username string,
             password string
         )`);
+        
+        this.db.executeSql(`INSERT INTO login VALUES (?,?)`, [username, password]);
 
-        await this.db.executeSql(`INSERT into login values ("tom","pass")`);
-
-        this.test_populate();
+        // this.test_populate();
         type HomeScreenFollowUps = {
             name:string
         };
@@ -858,9 +858,19 @@ export default class LocalDB{
 
         // this.insertDischarge([discharge1, discharge2]);
 
+        await this.db.executeSql(`INSERT into login values ("tom","pass")`);
+
         
         
 
+    }
+
+    static async getLoginCredentials(){
+
+
+        var b = await this.db.executeSql("Select * from login",[]);
+        b = b.rows.item(0);
+        return {userID:"1", password:b.password};
     }
 
     
@@ -872,14 +882,14 @@ export default class LocalDB{
         // await this.init();
         // await SyncClient.sync();
 
-        var a = await this.checkLogin("tom", "pass");
-        console.log(a);
+        // var a = await this.checkLogin("tom", "pass");
+        // console.log(a);
 
         var b = await this.db.executeSql("Select * from login",[]);
         console.log(b.rows.item(0));
         
-        // var a  = await this.getWorkerDetails();
-        // console.log(a);
+        var a  = await this.getWorkerDetails();
+        console.log(a);
 
         // var a = await this.getLatestDischarge(4);
         // console.log(a);
@@ -891,8 +901,8 @@ export default class LocalDB{
         // var a = await this.getLastSync();
         // console.log(a);
 
-        // var b = await this.getFollowUps();
-        // console.log(b);
+        var c = await this.getFollowUps();
+        console.log(c);
 
         // var c = await this.getHomeScreenFollowUps("completed");
         // console.log(c); 
@@ -900,8 +910,8 @@ export default class LocalDB{
         // var a = await this.getLastUpdate([1,2]);
         // console.log(a);
 
-        var b = await this.getNewFollowUps();
-        console.log(b);
+        // var b = await this.getNewFollowUps();
+        // console.log(b);
 
         // var a = await this.getHomeScreenFollowUps();
         // console.log(a);

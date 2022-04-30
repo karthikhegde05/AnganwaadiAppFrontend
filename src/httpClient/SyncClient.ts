@@ -6,21 +6,25 @@ import LocalDB from '../storage/LocalDB';
 export default class SyncClient{
 
     private static http = HTTP;
+    private static token = "";
 
-    constructor(){
-        // SyncClient.http.setDataSerializer('json');
-    }
 
     static async get(url:string){
-        var result = await this.http.get(url, {}, {});
-        // console.log(result.data);
+
+        var header = {Authorization: "Bearer " + this.token};
+        this.http.setDataSerializer('json');
+        var result = await this.http.get(url, {}, header);
+        console.log(result.data);
         return JSON.parse(result.data);
     }
 
     static async post(url:string, body:Object):Promise<any>{
         console.log(body);
         this.http.setDataSerializer('json');
-        var result = await this.http.post(url, body, {});
+
+        var header = {Authorization: "Bearer " + this.token};
+        
+        var result = await this.http.post(url, body, header);
         // console.log(typeof result.data);
         var c = result.data.charAt(0);
         if(c != "[" && c != "{")
@@ -40,6 +44,18 @@ export default class SyncClient{
         return JSON.parse(result.data);
     }
 
+    static async getToken(){
+
+        const url = RestPath.baseUrl + RestPath.auth;
+        var cred = await LocalDB.getLoginCredentials();
+        this.http.setDataSerializer('json');
+        var result = await this.http.post(url, cred, {});
+
+        var body = JSON.parse(result.data);
+        console.log(body);
+        SyncClient.token = body.accessToken;    
+    }
+
     static async sync(){
 
         // var result = await this.http.get("https://reqres.in/api/users?page=2", {}, {});
@@ -51,7 +67,9 @@ export default class SyncClient{
 
         console.log(lastSync);
 
-        // get followups
+        await this.getToken();
+        
+
         var url = RestPath.baseUrl + RestPath.pullFollowUps + worker.aww_id + "/" + lastSync;
         
         const followUpResponse:any = await this.get(url);

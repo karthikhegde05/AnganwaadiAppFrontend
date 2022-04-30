@@ -80,23 +80,15 @@ const Home: React.FC = () => {
 
       return lstFollowups
         .filter(followUp => String(followUp.address).startsWith(filter.address))
-        .filter(followUp => followUp.city.startsWith(filter.city))
+        .filter(followUp => String(followUp.city).startsWith(filter.city))
         .filter(followUp =>
           ((followUp.completedDate !== null) && (filter.status == 'completed')) ||
           ((followUp.completedDate === null) && (filter.status == 'upcoming'))
         );
   }
-  
 
-  const GetFollowupDetails = async() => {
-
-      await LocalDB.open();
-      
-      var result = await LocalDB.getHomeScreenFollowUps("upcoming");
-
-      console.log(result);
-
-      const date = new Date();
+  const upcomingFollowUpBinning = (result: HomeScreenFollowUp[]) => {
+    const date = new Date();
       const today = date.toISOString().split("T")[0]; 
       //split1 : index of first followup not in the past
       const split1 = result.findIndex((followUp:HomeScreenFollowUp) => {
@@ -143,21 +135,42 @@ const Home: React.FC = () => {
 
       setThisWeekFollowUps(result.slice(split2, split3));
       setLaterFollowUps(result.slice(split3));
+  }
+
+  const completedFollowupBinning = (result: HomeScreenFollowUp[], last_sync:string) => {
+    
+
+    console.log(result);
+    const split4 = result.findIndex((followUp:HomeScreenFollowUp) => {
+      return (last_sync.localeCompare(followUp.completedDate) == 1);
+    });
+    // console.log(last_sync);
+    // console.log(split4)
+
+    setEditableFollowUps(result.slice(0,split4));
+    setNonEditableFollowUps(result.slice(split4));
+  }
+  
+
+  const GetFollowupDetails = async() => {
+
+      await LocalDB.open();
+      console.log("fetched");
+      var result = await LocalDB.getHomeScreenFollowUps("upcoming");
+
+      console.log(result);
+
+      upcomingFollowUpBinning(result);
 
       result = await LocalDB.getHomeScreenFollowUps("completed");
       const last_sync = await LocalDB.getLastSync();
 
-      console.log(result);
-      const split4 = result.findIndex((followUp:HomeScreenFollowUp) => {
-        return (last_sync.localeCompare(followUp.completedDate) == 1);
-      });
-
-      setEditableFollowUps(result.slice(0,split4));
-      setNonEditableFollowUps(result.slice(split4));
+      completedFollowupBinning(result, last_sync);
+     
       
-      console.log(split4);
-      console.log(editableFollowUps);
-      console.log(last_sync);
+      // console.log(split4);
+      // console.log(editableFollowUps);
+      // console.log(last_sync);
 
 
   };
@@ -287,7 +300,7 @@ const HomeScreenFollowUpListItem: React.FC<HomeScreenFollowUp> = (props: HomeScr
     color = "default";
 
   const redirectToPatientProfile = () =>{
-    console.log("a");
+    // console.log("a");
     history.push({pathname:"patientProfile", state: {patientId: props.patientId}})
   };
 

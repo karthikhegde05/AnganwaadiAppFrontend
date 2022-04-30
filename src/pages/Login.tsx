@@ -25,6 +25,7 @@ import { BrowserRouter, Link, Switch} from 'react-router-dom';
 import  Axios, {AxiosResponse } from 'axios';
 import {AuthContext } from '../contexts/AuthContextProvider';
 import useAuth from '../hooks/useAuth';
+import LocalDB from '../storage/LocalDB';
 
 
 const Login:React.FC<RouteComponentProps> = ({history}: any) => {
@@ -56,23 +57,37 @@ const Login:React.FC<RouteComponentProps> = ({history}: any) => {
     };
 
     const login = async() =>{
-      history.push("/home");
-      const result = await Axios.post("http://localhost:8081/login",
-      {
-          "userID":username,
-          "password":password
+      // history.push("/home");
+      // const result = await Axios.post("http://localhost:8081/login",
+      // {
+      //     "userID":username,
+      //     "password":password
+      // }
+      // ).then((response) => {return loginSuccess(response);}).
+      // catch(function (error){console.log(error); return "error"});
+      // //if(result == "valid"){
+      // //  history.push("/home");
+      // //}
+      // if(result == "invalid"){
+      //   setErrorMsg("Credentials are incorrect, enter again");
+      // }
+      // else if(result == "error"){
+      //   setErrorMsg("There was a problem connecting to server.");
+      // }
+
+      const localResult: boolean = await LocalDB.checkLogin(username, password);
+      if(localResult == false){
+        if(await LoginClient.check(username, password)){
+          history.replace("/home");
+        }
+        else{
+          setErrorMsg("Wrong Credentials");
+        }
       }
-      ).then((response) => {return loginSuccess(response);}).
-      catch(function (error){console.log(error); return "error"});
-      //if(result == "valid"){
-      //  history.push("/home");
-      //}
-      if(result == "invalid"){
-        setErrorMsg("Credentials are incorrect, enter again");
+      else{
+        history.replace("/home");
       }
-      else if(result == "error"){
-        setErrorMsg("There was a problem connecting to server.");
-      }
+
 
     };
 

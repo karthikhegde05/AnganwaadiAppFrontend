@@ -1,7 +1,22 @@
 import Axios, { AxiosResponse } from 'axios';
+import {HTTP, HTTPResponse} from "@awesome-cordova-plugins/http";
+import RestPath from './RestPath';
+import LocalDB from '../storage/LocalDB';
+import SyncClient from './SyncClient';
+
+type WorkerProfile = {
+    aww_id:number,
+    name:string,
+    contact_number:string,
+    username:string,
+    email:string,
+    aw_address:string,
+    aw_location:string
+}
 
 export default class LoginClient{
     
+    private static http = HTTP;
 
     static async login(userID:String, password:String):Promise<String>{
         
@@ -27,6 +42,32 @@ export default class LoginClient{
         else
             return "invalid";
 
+    }
+
+    static async check(username:string, password:string):Promise<boolean>{
+
+        var url = RestPath.baseUrl + RestPath.login;
+        this.http.setDataSerializer('json');
+        var result = await this.http.post(url, {userID:username, password:password}, {});
+        var r = JSON.parse(result.data);
+
+        console.log(r);
+
+        if(r.result === "valid"){
+
+            
+
+            LocalDB.reset();
+            const w:WorkerProfile = r.worker;
+            await LocalDB.open();
+            await LocalDB.init(w);
+            await SyncClient.sync();
+            return true;
+        }
+        else{
+            
+            return false;
+        }
     }
 
     

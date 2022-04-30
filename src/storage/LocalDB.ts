@@ -101,7 +101,7 @@ export default class LocalDB{
 
     }
 
-    static async init(){
+    static async init(worker: WorkerProfile){
 
         this.db.executeSql(`CREATE TABLE IF NOT EXISTS sync (
             table_name string Primary key,
@@ -151,20 +151,16 @@ export default class LocalDB{
             aww_id integer PRIMARY KEY,
             name string,
             contact_number string,
-            username string,
-            email string,
             aw_address string,
             aw_location string
         )`);
 
-        this.db.executeSql("insert into worker_details values (?,?,?,?,?,?,?)", [
-            "2",
-            "john", 
-            "999999999",
-            "john",
-            "john@john.com",
-            "somewhere",
-            "in the middle of nowhere"
+        this.db.executeSql("insert into worker_details values (?,?,?,?,?)", [
+            worker.aww_id,
+            worker.name,
+            worker.contact_number,
+            worker.aw_address,
+            worker.aw_location
         ]);
 
         this.db.executeSql(`CREATE TABLE IF NOT EXISTS discharge_summary (
@@ -178,6 +174,13 @@ export default class LocalDB{
             treatment_protocol string,
             sam_id integer
         )`);
+
+        this.db.executeSql(`CREATE TABLE IF NOT EXISTS login (
+            username string,
+            password string
+        )`);
+
+        await this.db.executeSql(`INSERT into login values ("tom","pass")`);
 
         this.test_populate();
         type HomeScreenFollowUps = {
@@ -200,6 +203,24 @@ export default class LocalDB{
     //     .catch((error) => {console.log(error)});
 
     // }
+
+    static async checkLogin(username:string, password:string):Promise<boolean>{
+
+        await this.open();
+        var result = await this.db.executeSql(`SELECT * FROM login`,[]);
+
+        if(result.rows.length == 0)
+            return false;
+
+        result = result.rows.item(0);
+
+
+        if(result.username === username && result.password === password)
+            return true
+
+        return false;
+
+    }
 
     static async setLastSync(newLastSync: string){
         this.db.executeSql(`UPDATE sync SET last_sync = ? WHERE table_name = 'followup'`, [newLastSync]);
@@ -241,6 +262,7 @@ export default class LocalDB{
             const f = result.rows.item(i);
             var index:string = f.followup_id.toString();
             followups[index] = {
+                    hsId: f.hs_id,
                     height: f.height,
                     weight: f.weight,
                     muac: f.muac,
@@ -327,7 +349,7 @@ export default class LocalDB{
             await this.db.transaction((t) =>{
                 patients.forEach((patient) =>{
 
-                    t.executeSql("INSERT INTO patient values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", [
+                    t.executeSql("INSERT INTO patient values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", [
                         patient.samId,
                         patient.uhId,
                         patient.rchId,
@@ -343,7 +365,8 @@ export default class LocalDB{
                         patient.religion,
                         patient.bpl,
                         patient.referredBy,
-                        patient.last_updated
+                        patient.last_updated,
+                        0
                     ]);
                     
                 });
@@ -496,13 +519,17 @@ export default class LocalDB{
     public static async getWorkerDetails():Promise<WorkerProfile>{
 
         var result = await this.db.executeSql("SELECT * FROM worker_details", []);
-
+        // aww_id integer PRIMARY KEY,
+        // name string,
+        // contact_number string,
+        // aw_address string,
+        // aw_location string
         result = result.rows.item(0);
         var details:WorkerProfile = {
             aww_id:result.aww_id,
             name:result.name,
             contact_number:result.contact_number,
-            username:result.username,
+            username:result.name,
             email:result.address,
             aw_address:result.aw_address,
             aw_location:result.aw_location
@@ -830,6 +857,8 @@ export default class LocalDB{
         };
 
         // this.insertDischarge([discharge1, discharge2]);
+
+        
         
 
     }
@@ -842,8 +871,15 @@ export default class LocalDB{
         await this.open();
         // await this.init();
         // await SyncClient.sync();
+
+        var a = await this.checkLogin("tom", "pass");
+        console.log(a);
+
+        var b = await this.db.executeSql("Select * from login",[]);
+        console.log(b.rows.item(0));
         
-        // setTime
+        // var a  = await this.getWorkerDetails();
+        // console.log(a);
 
         // var a = await this.getLatestDischarge(4);
         // console.log(a);
@@ -855,17 +891,17 @@ export default class LocalDB{
         // var a = await this.getLastSync();
         // console.log(a);
 
-        var b = await this.getFollowUps();
-        console.log(b);
+        // var b = await this.getFollowUps();
+        // console.log(b);
 
-        // var c = await this.getHomeScreenFollowUps("upcoming");
+        // var c = await this.getHomeScreenFollowUps("completed");
         // console.log(c); 
 
         // var a = await this.getLastUpdate([1,2]);
         // console.log(a);
 
-        // var a = await this.getNewFollowUps();
-        // console.log(a);
+        var b = await this.getNewFollowUps();
+        console.log(b);
 
         // var a = await this.getHomeScreenFollowUps();
         // console.log(a);

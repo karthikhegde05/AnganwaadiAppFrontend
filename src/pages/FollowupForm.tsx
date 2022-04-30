@@ -92,15 +92,15 @@ const FollowupFormComponent: React.FC = () =>{
         // console.log(destUrl);
       var gs = ""
       let gender = hist.state.gender;
-      console.log(gender)
+      // console.log(gender)
         if(gender == "M"){
-          console.log("entered")
+          // console.log("entered")
           if(weight <= boysGrowthMap[height]){
             gs = "SAM";
-            console.log("entered1")
+            // console.log("entered1")
           }
           else{
-            console.log("entered2")
+            // console.log("entered2")
             gs = "regular";
           }
         }
@@ -116,23 +116,26 @@ const FollowupFormComponent: React.FC = () =>{
 
         if(gs == "regular"){
           presentRegularAlert();
-          console.log(height, weight, muac, otherSymptoms, hist.state.gender);
+          // console.log(height, weight, muac, otherSymptoms, hist.state.gender);
           setTimeout(() => {
-            history.go(-2);
-            history.replace("/home");
+            
             dismissa();
-          }, 2000);
+            history.go(-1);
+            // history.replace("/home");
+            
+          }, 5000);
           
         }
         else {
           presentSAMalert();
-          console.log(height, weight, muac, otherSymptoms, hist.state.gender);
+          // console.log(height, weight, muac, otherSymptoms, hist.state.gender);
           setTimeout(() => {
             
-            history.go(-2);
-            history.replace("/home");
             dismiss();
-          }, 2000);
+            history.go(-1);
+            // history.replace("/home");
+            
+          }, 5000);
           
         }
         

@@ -9,6 +9,16 @@ import React, {useState, useEffect} from 'react';
 import LocalDB from '../storage/LocalDB';
 import SyncClient from '../httpClient/SyncClient';
 
+type WorkerProfile = {
+  aww_id:number,
+  name:string,
+  contact_number:string,
+  username:string,
+  email:string,
+  aw_address:string,
+  aw_location:string
+}
+
 const Register: React.FC = () => {
     const [username, setUsername] = useState<string>("")
     const [password, setPassword] = useState<string>("")
@@ -48,7 +58,17 @@ const Register: React.FC = () => {
     }
 
     function init(){
-      LocalDB.init();
+
+      const worker:WorkerProfile = {
+        aww_id: 3,
+        name: 'tom',
+        contact_number: '9999999',
+        username: 'tom',
+        email: 'tom',
+        aw_address: 'tom',
+        aw_location: 'tom'
+      }
+      LocalDB.init(worker);
     }
     
   return (

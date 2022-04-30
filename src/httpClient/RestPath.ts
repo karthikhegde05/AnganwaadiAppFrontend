@@ -1,12 +1,16 @@
 export default class RestPath{
     
-    static baseUrl: string = "http://128c-103-156-19-229.ngrok.io/";
+    static baseUrl: string = "http://af4d-103-156-19-229.in.ngrok.io/";
 
+    //sync
     static pullFollowUps: string = "sync/followup/";
     static pullPatient: string = "sync/patient/";
     static pushFollowUps: string = "followup/update";
 
+    //login
+    static login: string = "login/"
 
+    //test
     static sync: string = "test/sync/";
 
 }

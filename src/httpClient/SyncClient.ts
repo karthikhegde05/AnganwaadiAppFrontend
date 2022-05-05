@@ -61,65 +61,74 @@ export default class SyncClient{
         // var result = await this.http.get("https://reqres.in/api/users?page=2", {}, {});
         // var obj = await this.get("https://reqres.in/api/users?page=2");
         // console.log(obj);
-        await LocalDB.open();
-        const worker = await LocalDB.getWorkerDetails();
-        const lastSync = await LocalDB.getLastSync();
 
-        console.log(lastSync);
+        try{
+            await LocalDB.open();
+            const worker = await LocalDB.getWorkerDetails();
+            const lastSync = await LocalDB.getLastSync();
 
-        await this.getToken();
-        
+            console.log(lastSync);
 
-        var url = RestPath.baseUrl + RestPath.pullFollowUps + worker.aww_id + "/" + lastSync;
-        
-        const followUpResponse:any = await this.get(url);
-        console.log(followUpResponse);
-        
-        const sam_ids:number[] = [];
-
-        followUpResponse.forEach((followup:any) => {
-            sam_ids.push(followup.samId);
-        });
-
-
-        const lastUpdates:Array<string> = await LocalDB.getLastUpdate(sam_ids);
-        // console.log(lastUpdates);
-        // console.log(lastUpdates.at(0));
-
-        var body:any[] = [];
-
-        for(var i = 0; i < sam_ids.length; i++){
-            body.push({
-                id:sam_ids[i],
-                lastUpdate:lastUpdates[i]
-            });
+            await this.getToken();
             
+
+            var url = RestPath.baseUrl + RestPath.pullFollowUps + worker.aww_id + "/" + lastSync;
+            
+            const followUpResponse:any = await this.get(url);
+            console.log(followUpResponse);
+            
+            const sam_ids:number[] = [];
+
+            followUpResponse.forEach((followup:any) => {
+                sam_ids.push(followup.samId);
+            });
+
+
+            const lastUpdates:Array<string> = await LocalDB.getLastUpdate(sam_ids);
+            // console.log(lastUpdates);
+            // console.log(lastUpdates.at(0));
+
+            var body:any[] = [];
+
+            for(var i = 0; i < sam_ids.length; i++){
+                body.push({
+                    id:sam_ids[i],
+                    lastUpdate:lastUpdates[i]
+                });
+                
+            }
+
+
+            // console.log(body);
+
+            url = RestPath.baseUrl + RestPath.pullPatient;
+            
+            const patientResponse = await this.post(url, body);
+
+            console.log(patientResponse);
+
+            const newFollowUps = await LocalDB.getNewFollowUps();
+
+            url = RestPath.baseUrl + RestPath.pushFollowUps;
+
+            console.log(newFollowUps);
+            await this.post(url, newFollowUps);
+
+            
+            await LocalDB.insertFollowUps(followUpResponse);
+            await LocalDB.updatePatients(patientResponse);
+            var l = new Date();
+            l.setHours(l.getHours() + 5);
+            l.setMinutes(l.getMinutes() + 30);
+            await LocalDB.setLastSync(l.toISOString().slice(0,-1));
+
+            return true;
         }
-
-
-        // console.log(body);
-
-        url = RestPath.baseUrl + RestPath.pullPatient;
+        catch(e){
+            console.log(e);
+            return false;
+        }
         
-        const patientResponse = await this.post(url, body);
-
-        console.log(patientResponse);
-
-        const newFollowUps = await LocalDB.getNewFollowUps();
-
-        url = RestPath.baseUrl + RestPath.pushFollowUps;
-
-        console.log(newFollowUps);
-        await this.post(url, newFollowUps);
-
-
-        await LocalDB.insertFollowUps(followUpResponse);
-        await LocalDB.updatePatients(patientResponse);
-        var l = new Date();
-        l.setHours(l.getHours() + 5);
-        l.setMinutes(l.getMinutes() + 30);
-        await LocalDB.setLastSync(l.toISOString().slice(0,-1));
-
 
     }
 

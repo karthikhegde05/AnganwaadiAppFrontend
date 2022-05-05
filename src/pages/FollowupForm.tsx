@@ -62,34 +62,6 @@ const FollowupFormComponent: React.FC = () =>{
     const formSubmission = async() => {
 
 
-        // var destUrl = "";
-        // let ratio = weight;//height;
-
-        // console.log(weight);
-        // if(gender == "M"){
-        //   if(ratio < boysGrowthMap[height]){
-        //     alert("SAM child");
-        //     destUrl = "http://localhost:8081/followupFormSubmission/" + hist.state.followupId.toString();
-        //   }
-        //   else{
-        //     alert("Healthy");
-        //     destUrl = "http://localhost:8081/followupFormSubmission/" + hist.state.followupId.toString();
-        //   }
-        // }
-
-        // if(gender == "F"){
-        //   if(ratio < girlsGrowthMap[height]){
-        //     alert("SAM child");
-        //     destUrl = "http://localhost:8081/followupFormSubmission/" + hist.state.followupId.toString();
-        //   }
-        //   else{
-        //     alert("Healthy");
-        //     destUrl = "http://localhost:8081/followupFormSubmission/" + hist.state.followupId.toString();
-        //   }
-        // }
-
-        // console.log(gender);
-        // console.log(destUrl);
       var gs = ""
       let gender = hist.state.gender;
       // console.log(gender)
@@ -105,6 +77,8 @@ const FollowupFormComponent: React.FC = () =>{
           }
         }
         else if(gender == "F"){
+          console.log(weight);
+          console.log(girlsGrowthMap[height]);
           if(weight <= girlsGrowthMap[height]){
             gs = "SAM";
           }

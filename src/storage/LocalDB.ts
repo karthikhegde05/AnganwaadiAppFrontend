@@ -65,6 +65,8 @@ type patientDTO = {
     last_updated: string,
     followups: FollowupDTO[]
     dischargeSummary: Discharge | null
+    nrcContact: string,
+    nrcName: string
 }
 
 type WorkerProfile = {
@@ -128,7 +130,9 @@ export default class LocalDB{
                 bpl integer,
                 referred_by string,
                 last_updated datetime,
-                discharge_id integer
+                discharge_id integer,
+                nrc string,
+                nrc_contact string
             );
         `).catch(error => console.log(error));
 
@@ -349,7 +353,7 @@ export default class LocalDB{
             await this.db.transaction((t) =>{
                 patients.forEach((patient) =>{
 
-                    t.executeSql("INSERT INTO patient values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", [
+                    t.executeSql("INSERT INTO patient values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", [
                         patient.samId,
                         patient.uhId,
                         patient.rchId,
@@ -366,7 +370,9 @@ export default class LocalDB{
                         patient.bpl,
                         patient.referredBy,
                         patient.last_updated,
-                        0
+                        patient.dischargeSummary?.dischargeId,
+                        patient.nrcName,
+                        patient.nrcContact
                     ]);
                     
                 });
@@ -449,9 +455,10 @@ export default class LocalDB{
         try{
             await this.db.transaction((t) =>{
                 followups.forEach((followup) =>{
-           
+                    
+                    console.log(followup.followupId);
                     var healthstatus = followup.healthStatus;
-                    t.executeSql("INSERT INTO followup values (?,?,?,?,?,?,?,?,?,?,?,?)", [
+                    t.executeSql("INSERT OR IGNORE INTO followup values (?,?,?,?,?,?,?,?,?,?,?,?)", [
                         followup.followupId,
                         followup.samId,
                         followup.workerId,
@@ -589,7 +596,9 @@ export default class LocalDB{
             referredBy:result.referred_by,
             last_updated:result.last_updated,
             followups: [],
-            dischargeSummary: null
+            dischargeSummary: null,
+            nrcName: result.nrc,
+            nrcContact: result.nrc_contact
         };
 
         result = await this.db.executeSql("SELECT * FROM followup WHERE sam_id = ?", [sam_id]);
@@ -636,7 +645,7 @@ export default class LocalDB{
             var patient = patients[i];
             await this.insertFollowUps(patient.followups);
             console.log(patient);
-            await this.db.executeSql("INSERT OR IGNORE INTO patient values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", [
+            await this.db.executeSql("INSERT OR IGNORE INTO patient values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", [
                 patient.samId,
                 patient.uhId,
                 patient.rchId,
@@ -653,7 +662,9 @@ export default class LocalDB{
                 patient.bpl,
                 patient.referredBy,
                 patient.last_updated,
-                patient.dischargeSummary!.dischargeId
+                patient.dischargeSummary!.dischargeId,
+                patient.nrcName,
+                patient.nrcContact
             ]);
 
             await this.db.executeSql(`
@@ -700,7 +711,9 @@ export default class LocalDB{
             referredBy: 'me',
             last_updated: '2022-01-01T10:20:20.000',
             followups: [],
-            dischargeSummary: null
+            dischargeSummary: null,
+            nrcName: "nrc",
+            nrcContact: "0"
         };
         // this.insertPatients([patient1]);
 
@@ -870,7 +883,7 @@ export default class LocalDB{
 
         var b = await this.db.executeSql("Select * from login",[]);
         b = b.rows.item(0);
-        return {userID:"1", password:b.password};
+        return {userID:b.username, password:b.password};
     }
 
     
@@ -887,9 +900,12 @@ export default class LocalDB{
 
         var b = await this.db.executeSql("Select * from login",[]);
         console.log(b.rows.item(0));
-        
-        var a  = await this.getWorkerDetails();
+
+        var a = await this.getPatient(1);
         console.log(a);
+        
+        // var a  = await this.getWorkerDetails();
+        // console.log(a);
 
         // var a = await this.getLatestDischarge(4);
         // console.log(a);
@@ -901,8 +917,8 @@ export default class LocalDB{
         // var a = await this.getLastSync();
         // console.log(a);
 
-        var c = await this.getFollowUps();
-        console.log(c);
+        // var c = await this.getFollowUps();
+        // console.log(c);
 
         // var c = await this.getHomeScreenFollowUps("completed");
         // console.log(c); 

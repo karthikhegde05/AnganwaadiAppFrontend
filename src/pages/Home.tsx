@@ -1,4 +1,4 @@
-import { IonButton, IonButtons, IonCard, IonCardContent, IonCheckbox, IonCol, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonListHeader, IonPage, IonRefresher, IonRefresherContent, IonRow, IonSearchbar, IonSegment, IonSegmentButton, IonSelect, IonSelectOption, IonTitle, IonToolbar, RefresherEventDetail, SearchbarChangeEventDetail, useIonModal } from '@ionic/react';
+import { IonButton, IonButtons, IonCard, IonCardContent, IonCheckbox, IonCol, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonListHeader, IonPage, IonRefresher, IonRefresherContent, IonRow, IonSearchbar, IonSegment, IonSegmentButton, IonSelect, IonSelectOption, IonTitle, IonToolbar, RefresherEventDetail, SearchbarChangeEventDetail, useIonModal, useIonToast } from '@ionic/react';
 import { RouteComponentProps, useLocation, useParams, useHistory } from 'react-router-dom';
 import HomeSearchBar from '../components/HomeSearchBar';
 import NotificationsComponent from '../components/NotificatonsComponent';
@@ -63,6 +63,9 @@ const Home: React.FC = () => {
     updateState: function(){console.log(filter)}
   });
 
+  const [showToast, dismissToast] = useIonToast();
+
+
   const logout = async() => {
     if(authContext!=null){
         authContext.setAuth({awwId:"", loggedIn:false});
@@ -99,7 +102,9 @@ const Home: React.FC = () => {
 
       if(split1 == -1){
         setDelayedFollowUps(result);
-        console.log(delayedFollowUps);
+        setTodayFollowUps([]);
+        setThisWeekFollowUps([]);
+        setLaterFollowUps([]);
         return;
       }
       //if there are delayed followups
@@ -116,6 +121,8 @@ const Home: React.FC = () => {
 
       if(split2 == -1){
         setTodayFollowUps(result.slice(split1));
+        setThisWeekFollowUps([]);
+        setLaterFollowUps([]);
         return;
       }
 
@@ -130,6 +137,7 @@ const Home: React.FC = () => {
 
       if(split3 == -1){
         setThisWeekFollowUps(result.slice(split2));
+        setLaterFollowUps([]);
         return;
       }
 
@@ -142,13 +150,19 @@ const Home: React.FC = () => {
 
     console.log(result);
     const split4 = result.findIndex((followUp:HomeScreenFollowUp) => {
-      return (last_sync.localeCompare(followUp.completedDate) == 1);
+      return (last_sync.localeCompare(followUp.completedDate) == -1);
     });
-    // console.log(last_sync);
-    // console.log(split4)
+    console.log(last_sync);
+    console.log(split4)
 
-    setEditableFollowUps(result.slice(0,split4));
-    setNonEditableFollowUps(result.slice(split4));
+    if(split4 == -1){
+      setEditableFollowUps([]);
+      setNonEditableFollowUps(result);
+      return;
+    }
+
+    setNonEditableFollowUps(result.slice(0,split4));
+    setEditableFollowUps(result.slice(split4));
   }
   
 
@@ -186,7 +200,13 @@ const Home: React.FC = () => {
     // console.log(lstFollowups);
     // console.log(laterFollowUps);
 
-    await SyncClient.sync();
+    const result = await SyncClient.sync();
+
+    if(!result){
+      showToast("Sync Failed. Device is Offline", 3000);
+      event.detail.complete();
+      return;
+    }
 
     setTimeout(() => {
       GetFollowupDetails();

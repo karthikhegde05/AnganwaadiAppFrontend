@@ -1,11 +1,13 @@
-import {IonButton, IonButtons, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonCol, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonPage, IonRow, IonTab, IonTabs, IonTitle, IonToolbar} from '@ionic/react';
+import {IonButton, IonButtons, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonCol, IonContent, IonFab, IonFabButton, IonFabList, IonHeader, IonIcon, IonItem, IonLabel, IonPage, IonRow, IonTab, IonTabs, IonTitle, IonToolbar} from '@ionic/react';
 import Axios, { AxiosResponse } from 'axios';
-import { arrowBack, caretForward, pencil, search } from 'ionicons/icons';
+import { arrowBack, call, caretForward, pencil, person, search, storefront } from 'ionicons/icons';
 import React, {useEffect, useState} from 'react';
 import { useHistory, useLocation, withRouter } from 'react-router-dom';
 import TakeFollowupComponent from '../components/TakeFollowupComponent';
 import useAuth from '../hooks/useAuth';
 import LocalDB from '../storage/LocalDB';
+
+import { CallNumber } from '@ionic-native/call-number';
 
 type historyTypeProps = {
     patientId: Number
@@ -57,7 +59,9 @@ type patientDTO = {
     bpl: string,
     referredBy: string,
     last_updated: string,
-    followups: FollowupDTO[]
+    followups: FollowupDTO[],
+    nrcContact: string,
+    nrcName: string
 }
 
 type dischargeType = {
@@ -153,6 +157,27 @@ const PatientProfilePage: React.FC = () => {
 
       };
 
+    const callPatient = () => {
+        
+        if(patientDetails?.contactNumber != undefined)
+            CallNumber.callNumber(patientDetails?.contactNumber, false)
+    }
+
+    const callNRC = () => {
+        
+        console.log(patientDetails);
+        if(patientDetails?.nrcContact != undefined)
+            CallNumber.callNumber(patientDetails?.nrcContact, false)
+    }
+
+
+
+    const callFunction = (number: string | undefined) => {
+
+        if(number !== undefined)
+            CallNumber.callNumber(number, false);
+    }
+
     //   GetPatientDetails();
     
       useEffect(() => {
@@ -194,6 +219,7 @@ const PatientProfilePage: React.FC = () => {
                             <p>Address:{patientDetails?.address}</p>
                             <p>City:{patientDetails?.city}</p>
                             <p>Contact Number:{patientDetails?.contactNumber}</p>
+                            <p>NRC:{patientDetails?.nrcName}</p>
 
 
                         </div>
@@ -278,7 +304,13 @@ const PatientProfilePage: React.FC = () => {
                           
                     </IonCardContent>
                 </IonCard>
-
+                <IonFab vertical='bottom' horizontal='end' slot='fixed'>
+                    <IonFabButton ><IonIcon icon={call} /></IonFabButton>
+                    <IonFabList side="start">
+                        <IonFabButton><IonIcon icon={storefront} onClick={callNRC}/></IonFabButton>
+                        <IonFabButton><IonIcon icon={person} onClick={callPatient} /></IonFabButton>
+                    </IonFabList>
+                </IonFab>
             </IonContent>
 
 
